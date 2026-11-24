@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BZGNSS BZ-251 GPS — Exploded View</title>
+<style>
+  :root{
+    --bg1:#f7f7f4; --bg2:#e8e8e3; --ink:#1d1f22; --muted:#6b6f75; --line:#2a2d31;
+    --accent:#0a84ff; --panel:rgba(255,255,255,.82);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+    background:radial-gradient(ellipse at 50% 35%,var(--bg1) 0%,var(--bg2) 100%);
+    display:flex;flex-direction:column;min-height:100vh;overflow:hidden;
+  }
+  header{padding:18px 28px 0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  header span{font-size:13px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  #stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 12px}
+  #stage svg{width:100%;height:100%;max-height:calc(100vh - 130px);display:block}
+  .controls{
+    margin:0 auto 18px;display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:var(--panel);backdrop-filter:blur(8px);border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);width:min(860px,calc(100% - 24px));
+  }
+  .controls button{
+    appearance:none;border:0;background:var(--ink);color:#fff;width:40px;height:40px;border-radius:10px;
+    display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .15s ease,background .2s;
+  }
+  .controls button:hover{transform:translateY(-1px);background:#000}
+  .controls button.ghost{background:transparent;color:var(--ink);border:1px solid rgba(0,0,0,.15);width:auto;padding:0 12px;font:600 12px Inter,sans-serif;letter-spacing:.04em}
+  .controls button.ghost:hover{background:rgba(0,0,0,.05)}
+  .controls svg{width:16px;height:16px}
+  input[type=range]{flex:1;accent-color:var(--ink);height:4px;cursor:pointer}
+  .pct{font:600 12px/1 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--muted);width:40px;text-align:right}
+  .opt{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none}
+  .opt input{accent-color:var(--ink)}
+  select{font:600 12px Inter,sans-serif;border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 6px;background:#fff;color:var(--ink)}
+  /* SVG interaction */
+  .part{cursor:pointer;transition:filter .25s ease}
+  .part.hl{filter:drop-shadow(0 0 5px rgba(10,132,255,.85)) brightness(1.08)}
+  .lbl{cursor:pointer}
+  .lbl text{transition:fill .2s}
+  .lbl.hl text{fill:var(--accent)}
+  .lbl.hl path,.lbl.hl circle{stroke:var(--accent)}
+  .lbl.hl circle{fill:var(--accent)}
+  @media (max-width:640px){.opt.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>BZGNSS BZ-251 · GPS module</h1><span>Exploded view · isometric</span>
+</header>
+<div id="stage"></div>
+<div class="controls">
+  <button id="play" title="Play / Pause (Espaço)" aria-label="Play/Pause"></button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Progresso">
+  <span class="pct" id="pct">0%</span>
+  <button class="ghost" id="toA" title="Ir para montado">Montado</button>
+  <button class="ghost" id="toB" title="Ir para explodido">Explodido</button>
+  <label class="opt hide-sm"><select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+  <label class="opt"><input type="checkbox" id="loop" checked>Loop</label>
+  <label class="opt hide-sm"><input type="checkbox" id="labels" checked>Rótulos</label>
+</div>
+
+<script>
+// <core>
+/* ================= ISOMETRIC CORE (pure, no DOM) ================= */
+const S = 21;                         // px per mm
+const C = Math.cos(Math.PI/6), H = 0.5;
+const CX = 12.5, CY = 12.5;              // view centre (mm)
+const P = (x,y,z=0) => [ (x - y - (CX-CY))*C*S, ((x + y) - (CX+CY))*H*S - z*S ];
+const pts = a => a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+const shade = (hex,k) => { const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,Math.round(((n>>16)&255)*k)), g=Math.min(255,Math.round(((n>>8)&255)*k)), b=Math.min(255,Math.round((n&255)*k));
+  return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1); };
+const area = poly => { let a=0; for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length]; a+=p[0]*q[1]-q[0]*p[1];} return a/2; };
+function rectPoly(cx,cy,w,d,rot=0){
+  const r=rot*Math.PI/180, c=Math.cos(r), s=Math.sin(r);
+  return [[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([x,y])=>[cx+x*c-y*s, cy+x*s+y*c]);
+}
+// extruded polygon; returns svg string
+function prism(poly,z0,z1,color,o={}){
+  const A=area(poly), faces=[];
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i], b=poly[(i+1)%poly.length];
+    let nx=b[1]-a[1], ny=-(b[0]-a[0]); if(A<0){nx=-nx;ny=-ny;}
+    const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+    if(nx+ny<=0.001) continue;
+    const k=0.60*(nx>0?nx*nx:0)+0.80*(ny>0?ny*ny:0);
+    faces.push({d:(a[0]+a[1]+b[0]+b[1])/2, s:`<polygon points="${pts([P(a[0],a[1],z0),P(b[0],b[1],z0),P(b[0],b[1],z1),P(a[0],a[1],z1)])}" fill="${o.side||shade(color,k)}"/>`});
+  }
+  faces.sort((p,q)=>p.d-q.d);
+  const st=o.stroke===false?'':` stroke="${o.stroke||'rgba(0,0,0,.35)'}" stroke-width="${o.sw||0.6}" stroke-linejoin="round"`;
+  return `<g${st}>${faces.map(f=>f.s).join('')}<polygon points="${pts(poly.map(p=>P(p[0],p[1],z1)))}" fill="${o.top||color}"/></g>`;
+}
+const box=(cx,cy,w,d,z0,z1,color,rot=0,o={})=>prism(rectPoly(cx,cy,w,d,rot),z0,z1,color,o);
+function flat(poly,z,fill,o={}){ return `<polygon points="${pts(poly.map(p=>P(p[0],p[1],z)))}" fill="${fill}"${o.stroke?` stroke="${o.stroke}" stroke-width="${o.sw||0.6}"`:''}${o.op!=null?` opacity="${o.op}"`:''}/>`; }
+const ell=(x,y,z,r,fill,o='')=>{const [X,Y]=P(x,y,z);return `<ellipse cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" rx="${(1.2247*r*S).toFixed(2)}" ry="${(0.7071*r*S).toFixed(2)}" fill="${fill}" ${o}/>`;};
+function cyl(x,y,z0,z1,r,color){
+  const [X,Y0]=P(x,y,z0),[,Y1]=P(x,y,z1),rx=1.2247*r*S, ry=0.7071*r*S;
+  return `<g><path d="M${(X-rx).toFixed(1)},${Y1.toFixed(1)} L${(X-rx).toFixed(1)},${Y0.toFixed(1)} A${rx.toFixed(1)},${ry.toFixed(1)} 0 0 0 ${(X+rx).toFixed(1)},${Y0.toFixed(1)} L${(X+rx).toFixed(1)},${Y1.toFixed(1)} Z" fill="${shade(color,.7)}"/>`+
+    `<ellipse cx="${X.toFixed(1)}" cy="${Y1.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${color}" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`+
+    `<ellipse cx="${(X-rx*.25).toFixed(1)}" cy="${(Y1-ry*.25).toFixed(1)}" rx="${(rx*.35).toFixed(1)}" ry="${(ry*.3).toFixed(1)}" fill="rgba(255,255,255,.18)"/></g>`;
+}
+// text lying on a horizontal plane
+function isoText(str,x,y,z,size,fill,rot=0,o={}){
+  const r=rot*Math.PI/180, ex=[Math.cos(r),Math.sin(r)], ey=[-Math.sin(r),Math.cos(r)], [e,f]=P(x,y,z);
+  const m=[(ex[0]-ex[1])*C*S,(ex[0]+ex[1])*H*S,(ey[0]-ey[1])*C*S,(ey[0]+ey[1])*H*S,e,f].map(v=>v.toFixed(3)).join(' ');
+  return `<text transform="matrix(${m})" font-size="${size}" fill="${fill}" text-anchor="${o.anchor||'middle'}" dominant-baseline="central" font-family="Inter,Segoe UI,Arial,sans-serif" font-weight="${o.w||700}" letter-spacing="${o.ls||0}">${str}</text>`;
+}
+function seeded(seed){ let s=seed; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+
+/* ---------- palette ---------- */
+const COL={pcb:'#5a2a86',pcbTop:'#6a33a0',gold:'#d9a85a',goldD:'#a2722e',silver:'#c9ccd0',tin:'#d2d4d6',silk:'#f1ecf6',
+  cap:'#c49a6a',chip:'#1f2023',ceramic:'#d9b08c',jst:'#efe6d6',copper:'#d08a63'};
+function roundRect(x0,y0,x1,y1,r,n=5){const o=[];const c=[[x1-r,y0+r,-90],[x1-r,y1-r,0],[x0+r,y1-r,90],[x0+r,y0+r,180]];
+  for(const [cx,cy,a0] of c) for(let i=0;i<=n;i++){const a=(a0+90*i/n)*Math.PI/180;o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);} return o;}
+const BW=25, BT=1.0;
+const MODR=[1.8,1.8,15.6,17.4];          // labelled GNSS receiver (stays on PCB)
+const CAN=[1.2,1.2,16.2,18.0], CANH=3.0, WALL=0.35;
+const JST={x:19.1,y:10.6,w:3.6,d:13.4,h:3.8};
+const PADY=[4.2,6.8,9.4,12.0,14.6,17.2];
+function passive(x,y,rot,col,L=1.6,W=0.8,h=0.55){
+  let s=box(x,y,L,W,0,h,col,rot,{sw:.3}); const r=rot*Math.PI/180, c=L*0.2;
+  for(const sg of [-1,1]) s+=box(x+Math.cos(r)*sg*(L/2-c/2),y+Math.sin(r)*sg*(L/2-c/2),c,W*1.02,0,h*1.02,COL.silver,rot,{sw:.3});
+  return s; }
+function padsRect(cx,cy,w,d,rot=0,fill=COL.tin){ return flat(rectPoly(cx,cy,w,d,rot),0.001,fill,{stroke:'#9b9da0',sw:.4}); }
+function boardSVG(){
+  let s='';
+  const poly=roundRect(0,0,BW,BW,1.4);
+  s+=prism(poly,-BT,0,COL.pcb,{top:'url(#pcbTop)',side:'#3e1c5e',stroke:'rgba(0,0,0,.45)'});
+  // fine via pattern + traces
+  const rnd=seeded(5);
+  for(let i=0;i<46;i++){ const x=0.8+rnd()*23.4, y=0.8+rnd()*23.4;
+    if(x>MODR[0]-.4&&x<MODR[2]+.4&&y>MODR[1]-.4&&y<MODR[3]+.4) continue; if(x>16.8&&x<21.6&&y>3.4&&y<17.8) continue;
+    s+=ell(x,y,0,.2,'#8a5fb3')+ell(x,y,0,.09,'#2b1240'); }
+  for(const t of [[[17,19.5],[19,21],[22,21]],[[2,19.4],[6,19.4],[7.5,21]],[[12,20.2],[16,20.2],[17.4,18.6]],[[21.8,3.0],[23.2,3.0]]])
+    s+=`<polyline points="${pts(t.map(p=>P(p[0],p[1],0)))}" fill="none" stroke="#7340a6" stroke-width="${(0.32*S).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s+=ell(1.3,1.3,0,.55,COL.gold)+ell(1.3,1.3,0,.32,'#f2f0ec');
+  // shield-can footprint (exposed when the can lifts)
+  const fr=[[CAN[0],CAN[1]],[CAN[2],CAN[1]],[CAN[2],CAN[3]],[CAN[0],CAN[3]]];
+  s+=`<polygon points="${pts(fr.map(p=>P(p[0],p[1],0.001)))}" fill="none" stroke="${COL.tin}" stroke-width="${(0.42*S).toFixed(1)}" stroke-linejoin="round"/>`;
+  // labelled GNSS receiver module (metal + white sticker)
+  s+=box((MODR[0]+MODR[2])/2,(MODR[1]+MODR[3])/2,MODR[2]-MODR[0],MODR[3]-MODR[1],0,2.0,'#b9bcc0',0,{top:'url(#metal)',sw:.6});
+  const cx=(MODR[0]+MODR[2])/2;
+  s+=flat(roundRect(MODR[0]+0.5,MODR[1]+0.5,MODR[2]-0.5,MODR[3]-0.5,0.8),2.001,'#f7f7f5',{stroke:'#d6d7d8',sw:.5});
+  s+=isoText('BZGNSS',cx,4.4,2.002,2.3,'#1b1b1d',0,{w:800,ls:-.05});
+  s+=isoText('BZ-251 GPS',cx,7.4,2.002,1.75,'#1b1b1d',0,{w:700,ls:.05});
+  // barcode
+  const r2=seeded(9); let bx=MODR[0]+1.4; while(bx<MODR[2]-1.6){ const w=0.12+r2()*0.32; s+=flat([[bx,9.2],[bx+w,9.2],[bx+w,10.6],[bx,10.6]],2.002,'#1b1b1d'); bx+=w+0.12+r2()*0.3; }
+  s+=isoText('86808584321',cx,12.0,2.002,1.15,'#1b1b1d',0,{w:500,ls:.18});
+  s+=isoText('TX RX GND 5V SCL SDA',cx,14.2,2.002,0.95,'#1b1b1d',0,{w:500});
+  // JST footprint pads
+  for(let i=0;i<6;i++) s+=padsRect(JST.x-0.6,JST.y-5.2+i*2.08,1.6,0.9,0,COL.gold);
+  s+=padsRect(JST.x+1.4,JST.y-6.4,1.2,1.4)+padsRect(JST.x+1.4,JST.y+6.4,1.2,1.4);
+  // edge solder pads + silk
+  PADY.forEach((y,i)=>{ s+=flat(roundRect(22.6,y-0.85,24.6,y+0.85,0.8),0.002,COL.gold,{stroke:COL.goldD,sw:.5})+ell(23.6,y,0.003,.32,'#3a2a12');
+    s+=isoText('TRGVCD'[i],21.7,y,0,0.85,COL.silk,90,{w:800}); });
+  // LEDs + silk
+  s+=box(19.0,21.8,1.6,0.8,0,0.5,'#f1efe9',0,{sw:.3})+flat(rectPoly(19.0,21.8,0.9,0.55),0.501,'#5aa7ff',{op:.8});
+  s+=box(22.4,21.8,1.6,0.8,0,0.5,'#f1efe9',0,{sw:.3})+flat(rectPoly(22.4,21.8,0.9,0.55),0.501,'#ff6a3d',{op:.85});
+  s+=isoText('PPS',19.0,23.4,0,0.95,COL.silk,0,{w:800})+isoText('TX',22.4,23.4,0,0.95,COL.silk,0,{w:800});
+  // front SMDs
+  s+=box(8.6,21.6,3.0,3.0,0.05,1.0,COL.chip,0,{top:'#26272b'});
+  for(const u of [-1,0,1]) s+=box(8.6+u*0.95,23.4,0.45,0.7,0,0.28,COL.silver,0,{sw:.3})+box(8.6+u*0.95,19.8,0.45,0.7,0,0.28,COL.silver,0,{sw:.3});
+  s+=passive(3.0,20.0,0,COL.cap,2.0,1.25,0.8)+passive(3.0,22.6,0,'#151517',1.6,0.8,0.5)+passive(12.8,21.0,90,COL.cap,2.0,1.25,0.8)+passive(15.2,23.0,0,COL.cap)+passive(13.0,24.0,0,'#151517',1.0,0.5,0.35);
+  s+=passive(17.2,20.4,90,COL.cap,1.0,0.5,0.4)+passive(21.0,19.3,0,'#151517',1.0,0.5,0.35);
+  return s; }
+
+/* ---------- COMPONENTS ---------- */
+const PARTS=[]; const addPart=o=>PARTS.push(o);
+const corners=(r,z)=>[[r[0],r[1],z],[r[2],r[1],z],[r[2],r[3],z],[r[0],r[3],z]];
+// ceramic patch antenna (sits on top of the can)
+const ANT=[1.2,1.2,16.2,18.0];
+addPart({id:'ant',label:'Ceramic Patch Antenna',side:'L',x:8.7,y:9.6,disp:[0,0,26.5],delay:0.0,baseZ:3.2,topZ:2*(CANH+2.6),
+  foot:rectPoly(8.7,9.6,15,16.8), gpts:corners(ANT,CANH), pads:()=>'',
+  draw:()=>{ const z0=CANH, cx=8.7, cy=9.6; let s='';
+    s+=prism(roundRect(ANT[0],ANT[1],ANT[2],ANT[3],0.6),z0,z0+0.45,'#a8bba1',{top:'#b8c9b0',sw:.5});
+    s+=prism(roundRect(ANT[0]+0.2,ANT[1]+0.2,ANT[2]-0.2,ANT[3]-0.2,1.2),z0+0.45,z0+4.4,COL.ceramic,{top:'#e2bd99',sw:.6});
+    s+=flat(roundRect(ANT[0]+1.5,ANT[1]+1.5,ANT[2]-1.5,ANT[3]-1.5,0.8),z0+4.401,'#f3f1ec',{stroke:'#d8d3ca',sw:.6});
+    s+=ell(cx+1.4,cy-2.6,z0+4.402,1.25,'#9a9ea3')+ell(cx+1.4,cy-2.6,z0+4.403,.9,'#e6e7e8')+ell(cx+1.4,cy-2.6,z0+4.404,.38,'#b0b4b8');
+    // feed tab on the front (+y) face
+    s+=`<polygon points="${pts([P(5.4,ANT[3]-0.2,z0+2.4),P(7.2,ANT[3]-0.2,z0+2.4),P(7.2,ANT[3]-0.2,z0+3.1),P(5.4,ANT[3]-0.2,z0+3.1)])}" fill="#8f9398"/>`;
+    return s; }});
+// metal shielding can — open tray, drawn with inner walls
+addPart({id:'can',label:'Metal Shielding Can',side:'L',x:8.7,y:9.6,disp:[0,0,15],delay:0.12,topZ:CANH,
+  foot:rectPoly(8.7,9.6,15,16.8), gpts:corners(CAN,0), pads:()=>'',
+  draw:()=>{ const [x0,y0,x1,y1]=CAN, t=WALL, h=CANH; let s='';
+    s+=prism([[x0-.5,y0-.5],[x1+.5,y0-.5],[x1+.5,y1+.5],[x0-.5,y1+.5]],0,0.22,'#b5b8bc',{top:'#c7cacd',sw:.5});   // flange
+    s+=flat([[x0+t,y0+t],[x1-t,y0+t],[x1-t,y1-t],[x0+t,y1-t]],0.25,'#aeb1b5');                               // inner floor
+    s+=`<polygon points="${pts([P(x0+t,y0+t,0.25),P(x0+t,y1-t,0.25),P(x0+t,y1-t,h),P(x0+t,y0+t,h)])}" fill="#cfd2d5"/>`;  // inner back-left wall (faces +x)
+    s+=`<polygon points="${pts([P(x0+t,y0+t,0.25),P(x1-t,y0+t,0.25),P(x1-t,y0+t,h),P(x0+t,y0+t,h)])}" fill="#bfc2c6"/>`;  // inner back-right wall (faces +y)
+    s+=`<polygon points="${pts([P(x1,y0,0),P(x1,y1,0),P(x1,y1,h),P(x1,y0,h)])}" fill="#9fa3a8" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+    s+=`<polygon points="${pts([P(x0,y1,0),P(x1,y1,0),P(x1,y1,h),P(x0,y1,h)])}" fill="#b6b9bd" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+    // rim
+    s+=`<path d="M${pts([P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h)]).replace(/ /g,' L')} Z M${pts([P(x0+t,y0+t,h),P(x0+t,y1-t,h),P(x1-t,y1-t,h),P(x1-t,y0+t,h)]).replace(/ /g,' L')} Z" fill="#e4e6e8" fill-rule="evenodd" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`;
+    // corner seams
+    s+=`<line x1="${P(x1,y1,0)[0].toFixed(1)}" y1="${P(x1,y1,0)[1].toFixed(1)}" x2="${P(x1,y1,h)[0].toFixed(1)}" y2="${P(x1,y1,h)[1].toFixed(1)}" stroke="#7d8186" stroke-width="1"/>`;
+    return s; }});
+// 6-pin JST connector — slides out sideways
+addPart({id:'jst',label:'6-Pin JST Connector',side:'R',x:JST.x,y:JST.y,baseZ:0.5,disp:[9.5,-3.5,8.0],delay:0.24,topZ:JST.h,
+  foot:rectPoly(JST.x,JST.y,JST.w,JST.d), gpts:[[JST.x-0.6,JST.y-5.2,0],[JST.x-0.6,JST.y+5.2,0]], pads:()=>'',
+  pins:(()=>{let s=''; for(let i=0;i<6;i++){ const y=JST.y-5.2+i*2.08; s+=box(JST.x-0.6,y,0.5,0.5,-2.6,0.2,'#c8a35a',0,{sw:.3}); } return s;})(),
+  draw:()=>{ const {x,y,w,d,h}=JST; let s='';
+    for(let i=0;i<6;i++){ const yy=y-5.2+i*2.08; s+=box(x-0.6,yy,1.4,0.5,0,0.3,COL.gold,0,{sw:.3}); }
+    s+=box(x,y,w,d,0,h,COL.jst,0,{top:'#f6f0e5',sw:.6});
+    s+=flat([[x-w/2+0.5,y-d/2+0.6],[x+w/2-0.5,y-d/2+0.6],[x+w/2-0.5,y+d/2-0.6],[x-w/2+0.5,y+d/2-0.6]],h+.001,'#d6ccba');
+    s+=flat([[x-w/2+0.9,y-d/2+1.0],[x+w/2-0.9,y-d/2+1.0],[x+w/2-0.9,y+d/2-1.0],[x-w/2+0.9,y+d/2-1.0]],h+.002,'#3b3630');
+    for(let i=0;i<6;i++){ const yy=y-5.2+i*2.08; s+=flat(rectPoly(x,yy,0.9,0.35),h+.003,'#c9a457'); }
+    s+=box(x+w/2+0.35,y-d/2+1.6,0.7,1.6,0,h*0.7,'#e7decd',0,{sw:.4})+box(x+w/2+0.35,y+d/2-1.6,0.7,1.6,0,h*0.7,'#e7decd',0,{sw:.4});
+    return s; }});
+// copper ground plane — under the PCB, moves down
+addPart({id:'gnd',kind:'under',label:'Copper Ground Plane',side:'R',x:12.5,y:12.5,ax:21,ay:25.2,az:-BT-0.6,disp:[0,0,-8.5],delay:0.30,topZ:-2*(BT+0.3),
+  foot:rectPoly(12.5,12.5,25,25), gpts:[[0,0,-BT],[BW,0,-BT],[BW,BW,-BT],[0,BW,-BT]], pads:()=>'',
+  draw:()=>prism(roundRect(-0.2,-0.2,BW+0.2,BW+0.2,1.5),-BT-0.6,-BT,COL.copper,{top:'url(#copper)',side:null,sw:.6})});
+
+/* ---------- labels ---------- */
+const EXTRA=[
+  {id:'pcb',label:'Purple PCB / Main Board',side:'L',pt:()=>P(0.6,18,-0.5),from:0.35},
+  {id:'pps',label:'PPS LED',side:'R',pt:()=>P(19.0,21.8,0.5),from:0.45},
+  {id:'tx',label:'TX LED',side:'R',pt:()=>P(22.4,21.8,0.5),from:0.5},
+];
+const LX=640;
+function partOffset(pt,k){ const [dx,dy,dz]=pt.disp; return [(dx*k - dy*k)*C*S, (dx*k + dy*k)*H*S - dz*k*S]; }
+function anchorOf(pt,k){ const [ox,oy]=partOffset(pt,k); const [X,Y]=P(pt.ax??pt.x,pt.ay??pt.y,pt.az??pt.topZ*0.5); return [X+ox,Y+oy]; }
+const LABELS=[];
+(function(){
+  const groups={};
+  for(const p of PARTS){ const key=p.group||p.id; (groups[key]=groups[key]||[]).push(p); }
+  for(const key in groups){ const g=groups[key]; LABELS.push({id:key,label:g[0].label,side:g[0].side,parts:g}); }
+  for(const e of EXTRA) LABELS.push({id:e.id,label:e.label,side:e.side,extra:e});
+  for(const side of ['L','R']){
+    const L=LABELS.filter(l=>l.side===side);
+    for(const l of L){ const a=l.parts? l.parts.map(p=>anchorOf(p,1)) : [l.extra.pt()]; l.want=a.reduce((s,v)=>s+v[1],0)/a.length; }
+    L.sort((a,b)=>a.want-b.want);
+    let y=-1e9; for(const l of L){ y=Math.max(l.want,y+64); l.y=y; }
+  }
+})();
+/* ---------- timeline ---------- */
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const SPAN=0.52;
+const local=(p,part)=>ease(clamp((p-part.delay)/SPAN));
+
+/* ---------- render ---------- */
+const DEFS=`<defs>
+<linearGradient id="pcbTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7740ad"/><stop offset=".55" stop-color="#62309a"/><stop offset="1" stop-color="#4f2580"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset=".5" stop-color="#c3c6ca"/><stop offset="1" stop-color="#e2e4e7"/></linearGradient>
+<linearGradient id="usbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f2f4"/><stop offset=".45" stop-color="#b9bcc1"/><stop offset=".7" stop-color="#d6d8dc"/><stop offset="1" stop-color="#8b8f95"/></linearGradient>
+<linearGradient id="copper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e7a27a"/><stop offset=".55" stop-color="#c98058"/><stop offset="1" stop-color="#9c5a3c"/></linearGradient>
+<linearGradient id="usbTop" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe1e4"/><stop offset=".5" stop-color="#f7f8f9"/><stop offset="1" stop-color="#c9ccd0"/></linearGradient>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="softS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>`;
+const BOARD_SVG=boardSVG();
+const PADS_SVG=PARTS.map(p=>p.pads()).join('');
+for(const p of PARTS){ p.svg=p.draw(); p.foot=p.foot||rectFoot(p); }
+function rectFoot(p){ // shadow footprint polygon (world) approximated by its pads bbox
+  const sizes={ant:[6.9,1.8],mcu:[5,5],xtal:[3.3,2.6],rst:[4.4,2.7],boot:[4.4,2.7],reg:[2.6,2.9],usb:[8.9,7.4]};
+  const [w,d]=sizes[p.id]||[1.6,0.8]; return rectPoly(p.x,p.y,w,d,p.id==='mcu'?45:0);
+}
+function render(p,opt={}){
+  const hov=opt.hover||null, showLabels=opt.labels!==false;
+  let out=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1100 -1060 2200 1600" font-family="Inter,Segoe UI,Arial,sans-serif">${DEFS}`;
+  for(const pt of PARTS) if(pt.kind==='under'){ const k=local(p,pt),[ox,oy]=partOffset(pt,k);
+    out+=`<g class="part${hov===pt.id?' hl':''}" data-id="${pt.id}" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.svg}</g>`; }
+  for(const pt of PARTS) if(pt.pins){ const k=local(p,pt); if(k<0.35){ const [ox,oy]=partOffset(pt,k); out+=`<g transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.pins}</g>`; } }
+  out+=`<g>${BOARD_SVG}${PADS_SVG}</g>`;
+  // shadows on board
+  out+='<g>';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.001||pt.kind==='under') continue;
+    const op=0.42*(1-0.75*k); const [ox,oy]=partOffset(pt,k);
+    out+=`<g transform="translate(${(ox*0.18).toFixed(1)},${(oy*0).toFixed(1)})" filter="url(#softS)" opacity="${op.toFixed(3)}">${flat(pt.foot,0.01,'#000')}</g>`; }
+  out+='</g>';
+  // guides
+  out+='<g fill="none" stroke="#5f6368" stroke-width="1.3" stroke-dasharray="6 5">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01) continue;
+    if(pt.gpts){ const [ox,oy]=partOffset(pt,k); for(const [gx,gy,gz] of pt.gpts){ const [ax,ay]=P(gx,gy,gz);
+      out+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(ax+ox).toFixed(1)}" y2="${(ay+oy).toFixed(1)}" opacity="${clamp(k*5).toFixed(2)}"/>`; } continue; }
+    const [ax,ay]=P(pt.x,pt.y,0), [ox,oy]=partOffset(pt,k);
+    out+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(ax+ox).toFixed(1)}" y2="${(ay+oy).toFixed(1)}" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g><g fill="#5f6368">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01||pt.gpts) continue; const [ax,ay]=P(pt.x,pt.y,0);
+    out+=`<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="2.6" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g>';
+  // parts, painter's order by depth
+  const order=PARTS.filter(pt=>pt.kind!=='under').map(pt=>{const k=local(p,pt);return {pt,k,depth:pt.x+pt.y+(pt.baseZ||0)+(pt.disp[0]+pt.disp[1])*k+pt.disp[2]*k*1.0};}).sort((a,b)=>a.depth-b.depth);
+  for(const {pt,k} of order){ const [ox,oy]=partOffset(pt,k); const key=pt.group||pt.id;
+    out+=`<g class="part${hov===key?' hl':''}" data-id="${key}" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.pins&&k>=0.35?pt.pins:''}${pt.svg}</g>`; }
+  // labels
+  if(showLabels){
+    out+='<g>';
+    for(const l of LABELS){
+      let a, anchors;
+      if(l.parts){ a=Math.max(...l.parts.map(pt=>local(p,pt))); anchors=l.parts.map(pt=>anchorOf(pt,local(p,pt))); a=clamp((a-0.5)/0.35); }
+      else { a=clamp((p-l.extra.from)/0.25); anchors=[l.extra.pt()]; }
+      if(a<=0.001) continue;
+      const left=l.side==='L', tx=left?-LX:LX, ex=left?-LX+12:LX-12, elbow=left?-LX+70:LX-70;
+      const col=hov===l.id?'#0a84ff':'#25282c';
+      let lines='';
+      for(const [x,y] of anchors){
+        const mx=elbow, my=l.y;
+        lines+=`<path d="M${ex},${l.y.toFixed(1)} L${mx},${my.toFixed(1)} L${x.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${col}" stroke-width="1.4"/>`+
+               `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/>`;
+      }
+      const dash = `stroke-dasharray="${(900*a).toFixed(0)} 2000"`;
+      out+=`<g class="lbl${hov===l.id?' hl':''}" data-id="${l.id}" opacity="${a.toFixed(3)}">`+
+        `<g ${dash}>${lines}</g>`+
+        `<text x="${tx}" y="${(l.y).toFixed(1)}" text-anchor="${left?'end':'start'}" dominant-baseline="central" font-size="25" font-weight="650" letter-spacing=".6" fill="${col}" transform="translate(${((1-a)*(left?-14:14)).toFixed(1)},0)">${l.label.toUpperCase()}</text>`+
+        `<rect x="${left?tx-430:tx-10}" y="${l.y-20}" width="440" height="40" fill="transparent"/></g>`;
+    }
+    out+='</g>';
+  }
+  return out+'</svg>';
+}
+// </core>
+
+/* ================= DOM / interaction ================= */
+if(typeof document!=='undefined'){
+  const stage=document.getElementById('stage'), scrub=document.getElementById('scrub'), pct=document.getElementById('pct'),
+        playBtn=document.getElementById('play'), loopEl=document.getElementById('loop'), labelsEl=document.getElementById('labels'),
+        speedEl=document.getElementById('speed');
+  const ICON_PLAY='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>';
+  const ICON_PAUSE='<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg>';
+  // cycle: explode 5.2s · hold 1.8s · assemble 3.6s · hold 1.2s
+  const T1=5.2,H1=1.8,T2=3.6,H2=1.2,CYCLE=T1+H1+T2+H2;
+  let t=0, playing=true, hover=null, last=performance.now(), p=0, tween=null, dirty=true;
+  function pFromT(tt){ tt=((tt%CYCLE)+CYCLE)%CYCLE;
+    if(tt<T1) return tt/T1; if(tt<T1+H1) return 1; if(tt<T1+H1+T2) return 1-(tt-T1-H1)/T2; return 0; }
+  function tFromP(pp,forward=true){ return forward? pp*T1 : T1+H1+(1-pp)*T2; }
+  function setPlaying(v){ playing=v; playBtn.innerHTML=v?ICON_PAUSE:ICON_PLAY; }
+  function draw(){ stage.innerHTML=render(p,{hover,labels:labelsEl.checked}); scrub.value=Math.round(p*1000); pct.textContent=Math.round(p*100)+'%'; dirty=false; }
+  function frame(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    if(tween){ tween.e+=dt; const k=ease(clamp(tween.e/tween.d)); p=tween.a+(tween.b-tween.a)*k; dirty=true;
+      if(tween.e>=tween.d){ t=tFromP(p,tween.b>tween.a); tween=null; } }
+    else if(playing){
+      t+=dt*parseFloat(speedEl.value);
+      if(!loopEl.checked && t>=T1){ t=T1; setPlaying(false); }
+      const np=pFromT(t); if(np!==p){p=np;dirty=true;}
+    }
+    if(dirty) draw();
+    requestAnimationFrame(frame);
+  }
+  playBtn.onclick=()=>{ if(!playing && !loopEl.checked && p>=1){ t=0; } setPlaying(!playing); };
+  scrub.addEventListener('input',()=>{ setPlaying(false); tween=null; p=scrub.value/1000; t=tFromP(p); dirty=true; });
+  document.getElementById('toA').onclick=()=>{ setPlaying(false); tween={a:p,b:0,d:Math.max(.4,1.4*p),e:0}; };
+  document.getElementById('toB').onclick=()=>{ setPlaying(false); tween={a:p,b:1,d:Math.max(.4,2.2*(1-p)),e:0}; };
+  labelsEl.onchange=()=>{dirty=true;};
+  stage.addEventListener('mouseover',e=>{ const g=e.target.closest('[data-id]'); const id=g?g.dataset.id:null; if(id!==hover){hover=id;dirty=true;} });
+  stage.addEventListener('mouseleave',()=>{hover=null;dirty=true;});
+  document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); playBtn.click(); }
+    if(e.code==='ArrowRight'){ setPlaying(false); p=clamp(p+0.02); t=tFromP(p); dirty=true; }
+    if(e.code==='ArrowLeft'){ setPlaying(false); p=clamp(p-0.02); t=tFromP(p); dirty=true; } });
+  setPlaying(true); draw(); requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>

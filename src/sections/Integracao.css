@@ -1,0 +1,120 @@
+.integracao {
+  display: grid;
+  gap: var(--s-8);
+}
+.integracao__cabeca {
+  display: grid;
+  gap: var(--s-5);
+}
+.integracao__cabeca .titulo {
+  max-width: 13ch;
+}
+
+/* Fluxo: cinco etapas sobre um trilho que se preenche com a rolagem */
+.fluxo {
+  --avanco: 0;
+  position: relative;
+  padding-top: var(--s-6);
+}
+.fluxo__lista {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--gutter);
+}
+
+.fluxo__trilho {
+  position: absolute;
+  top: calc(var(--s-6) + 7px);
+  left: 7px;
+  right: 7px;
+  height: 2px;
+  background: var(--linha-forte);
+}
+.fluxo__preenchido {
+  position: absolute;
+  inset: 0;
+  background: var(--azul);
+  transform-origin: left center;
+  transform: scaleX(var(--avanco));
+}
+
+.fluxo__etapa {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding-top: var(--s-7);
+}
+.fluxo__no {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--linha-forte);
+  border-radius: 50%;
+  background: var(--papel);
+  transition:
+    border-color var(--dur-media) var(--ease-out),
+    background-color var(--dur-media) var(--ease-out),
+    transform var(--dur-media) var(--ease-out);
+}
+.fluxo__etapa--ativa .fluxo__no {
+  border-color: var(--azul);
+  background: var(--azul);
+  transform: scale(1.15);
+}
+.fluxo__num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  transition: color var(--dur-media) var(--ease-out);
+}
+.fluxo__etapa--ativa .fluxo__num {
+  color: var(--azul-texto);
+}
+.fluxo__detalhe {
+  font-size: var(--t-nota);
+  font-weight: 700;
+  color: var(--azul-texto);
+  font-variant-numeric: tabular-nums;
+}
+.fluxo__texto {
+  color: var(--tinta-suave);
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 899px) {
+  .fluxo {
+    padding-top: 0;
+    padding-left: var(--s-7);
+  }
+  .fluxo__lista {
+    grid-template-columns: 1fr;
+    gap: var(--s-6);
+  }
+  .fluxo__trilho {
+    top: 7px;
+    bottom: 7px;
+    left: 7px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+  .fluxo__preenchido {
+    transform-origin: center top;
+    transform: scaleY(var(--avanco));
+  }
+  .fluxo__etapa {
+    padding-top: 0;
+  }
+  .fluxo__no {
+    left: calc(var(--s-7) * -1);
+  }
+}
+
+.fluxo__nome {
+  font-size: clamp(1.5rem, 2.2vw, 2.125rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}

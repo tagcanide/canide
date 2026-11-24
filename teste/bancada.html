@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Teste bancada</title>
+<style>html,body{margin:0;height:100%;background:#0b0f14}canvas{width:100vw;height:100vh;display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+import { criarBancada } from '/src/bancada/cena.js';
+import esp from '/src/bancada/placas/esp32c3.js';
+import bz from '/src/bancada/placas/bz251.js';
+import node from '/src/bancada/placas/nodemcu.js';
+import rf from '/src/bancada/placas/rf.js';
+const q = new URLSearchParams(location.search);
+const placas = { esp, bz, node, rf };
+const b = criarBancada(document.getElementById('c'));
+b.carregar(placas[q.get('placa') || 'esp']);
+b.definir({ p: +(q.get('p') || 0), az: +(q.get('az') || 38), el: +(q.get('el') || 24), dist: +(q.get('dist') || 1), foco: q.get('foco'), nivelFoco: q.get('foco') ? 1 : 0 });
+b.iniciar();
+window.__ok = true;
+window.__ancoras = () => b.ancoras();
+</script></body></html>

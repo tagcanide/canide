@@ -1,0 +1,53 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "sessoes": {
+      "$sid": {
+        ".read": "auth != null && $sid.length >= 24 && data.child('expira').val() > now",
+        ".write": "auth != null && $sid.length >= 24 && ((!data.exists() && newData.child('host').val() === auth.uid) || data.child('host').val() === auth.uid)",
+        ".validate": "!newData.exists() || newData.hasChildren(['host', 'expira', 'pareamentoAte'])",
+
+        "host": { ".validate": "newData.val() === auth.uid && (!data.exists() || data.val() === newData.val())" },
+        "criada": { ".validate": "newData.isNumber()" },
+        "expira": { ".validate": "newData.isNumber() && newData.val() <= now + 7260000" },
+        "pareamentoAte": { ".validate": "newData.isNumber() && newData.val() <= now + 660000" },
+
+        "controle": {
+          ".write": "auth != null && data.parent().child('expira').val() > now && ((!data.exists() && newData.val() === auth.uid && data.parent().child('pareamentoAte').val() > now) || data.val() === auth.uid)",
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+
+        "presenca": {
+          "host": { ".validate": "newData.isBoolean()" },
+          "controle": {
+            ".write": "auth != null && data.parent().parent().child('controle').val() === auth.uid",
+            ".validate": "newData.isBoolean()"
+          },
+          "$outro": { ".validate": false }
+        },
+
+        "comando": {
+          ".write": "auth != null && data.parent().child('controle').val() === auth.uid && data.parent().child('expira').val() > now",
+          ".validate": "newData.hasChildren(['tipo', 'seq', 't']) && newData.child('tipo').isString() && newData.child('tipo').val().matches(/^(subir|descer|subir-segurar|descer-segurar|parar|proxima|anterior|inicio|fim|pausar|retomar)$/) && newData.child('seq').isNumber() && newData.child('seq').val() > (data.child('seq').exists() ? data.child('seq').val() : 0) && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000",
+          "$outro": { ".validate": "$outro === 'tipo' || $outro === 'seq' || $outro === 't'" }
+        },
+
+        "estado": {
+          ".validate": "newData.hasChildren(['secao', 'total', 'nome', 'pausado'])"
+        },
+
+        "$outro": { ".validate": false }
+      }
+    },
+
+    "codigos": {
+      "$cod": {
+        ".read": "auth != null && $cod.length === 8 && data.child('expira').val() > now",
+        ".write": "auth != null && $cod.length === 8 && ((!data.exists() && newData.child('host').val() === auth.uid) || data.child('host').val() === auth.uid)",
+        ".validate": "!newData.exists() || (newData.hasChildren(['sid', 'host', 'expira']) && newData.child('sid').isString() && newData.child('sid').val().length >= 24 && newData.child('expira').isNumber() && newData.child('expira').val() <= now + 660000)"
+      }
+    }
+  }
+}

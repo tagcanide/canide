@@ -1,0 +1,412 @@
+.desmontagem {
+  background: var(--papel);
+  padding-top: var(--s-9);
+}
+
+.bancada__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-out);
+}
+.palco--pronta .bancada__canvas {
+  opacity: 1;
+}
+
+.desmontagem__cabeca {
+  display: grid;
+  gap: var(--s-5);
+  padding-bottom: var(--s-8);
+}
+
+.desmontagem__cabeca .titulo {
+  max-width: 14ch;
+}
+
+/* Seletor de placa: quatro alvos grandes, a medida como segunda linha */
+.seletor {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: var(--s-5);
+  background: var(--linha);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-ui);
+  overflow: hidden;
+}
+
+.seletor__item {
+  display: grid;
+  gap: var(--s-1);
+  min-height: 72px;
+  padding: var(--s-4) var(--s-5);
+  border: 0;
+  background: var(--papel);
+  text-align: left;
+  transition: background-color var(--dur-media) var(--ease-out);
+}
+.seletor__nome {
+  font-weight: 700;
+}
+.seletor__medida {
+  font-size: var(--t-nota);
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+.seletor__item[aria-pressed='true'] {
+  background: var(--azul);
+  color: var(--branco);
+}
+.seletor__item[aria-pressed='true'] .seletor__medida {
+  color: rgba(255, 255, 255, 0.85);
+}
+@media (hover: hover) {
+  .seletor__item:not([aria-pressed='true']):hover {
+    background: var(--papel-2);
+  }
+}
+
+/* Palco: a altura dá o curso da rolagem; a vista fica presa à tela */
+.palco {
+  position: relative;
+  height: 440vh;
+}
+.palco--estatico,
+.palco--sem-webgl {
+  height: auto;
+}
+
+.palco__vista {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  border-top: 1px solid var(--linha);
+}
+.palco--estatico .palco__vista,
+.palco--sem-webgl .palco__vista {
+  position: relative;
+  height: auto;
+  min-height: 100svh;
+}
+
+.palco__cena {
+  position: absolute;
+  inset: 0;
+}
+
+.palco__alternativa {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6% 4% 6% 34%;
+}
+
+.palco__linhas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: var(--z-rotulos);
+}
+.palco__linhas path {
+  fill: none;
+  stroke: var(--laranja);
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity var(--dur-media) var(--ease-out);
+}
+.palco--foco .palco__linhas path {
+  opacity: 1;
+}
+
+/* Marcadores numerados presos às peças; aparecem na desmontagem completa e na exploração */
+.palco__marcadores {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-rotulos);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-out);
+}
+.palco--interativa .palco__marcadores {
+  opacity: 1;
+}
+
+.marcador {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  will-change: transform;
+}
+.marcador__ponto {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 1px solid var(--linha-forte);
+  border-radius: 50%;
+  background: var(--papel);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta);
+  transition:
+    background-color var(--dur-media) var(--ease-out),
+    border-color var(--dur-media) var(--ease-out),
+    transform var(--dur-media) var(--ease-out);
+}
+.marcador__nome {
+  margin-top: -13px;
+  padding: 3px 10px;
+  border-radius: var(--raio-botao);
+  background: var(--papel);
+  font-size: var(--t-nota);
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity var(--dur-media) var(--ease-out),
+    transform var(--dur-media) var(--ease-out);
+}
+.marcador--sobre .marcador__ponto {
+  border-color: var(--azul);
+  transform: scale(1.12);
+}
+.marcador--sobre .marcador__nome {
+  opacity: 1;
+  transform: none;
+}
+.marcador--foco .marcador__ponto {
+  background: var(--laranja);
+  border-color: var(--laranja);
+  color: var(--preto);
+}
+.palco--foco .marcador:not(.marcador--foco) {
+  opacity: 0.25;
+}
+
+/* Painel da etapa: coluna esquerda no desktop, faixa inferior no celular */
+.palco__painel {
+  position: absolute;
+  left: var(--margem);
+  top: 46%;
+  z-index: var(--z-rotulos);
+  width: min(23rem, 30vw);
+  transform: translateY(-50%);
+  display: grid;
+  gap: var(--s-5);
+}
+
+.palco__etapa {
+  display: grid;
+  gap: var(--s-2);
+}
+.palco__num {
+  font-family: var(--fonte-editorial);
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--azul-texto);
+}
+.palco__num span {
+  font-family: var(--fonte-texto);
+  font-size: 0.32em;
+  letter-spacing: 0;
+  color: var(--tinta-suave);
+  vertical-align: top;
+}
+.palco__texto {
+  color: var(--tinta-suave);
+  max-width: 32ch;
+}
+
+.palco__alternar {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-botao);
+  width: max-content;
+}
+.palco__alternar button {
+  min-height: 44px;
+  padding: 0 var(--s-5);
+  border: 0;
+  border-radius: var(--raio-botao);
+  background: transparent;
+  font-weight: 700;
+}
+.palco__alternar button[aria-pressed='true'] {
+  background: var(--azul);
+  color: var(--branco);
+}
+
+.pecas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.pecas__item {
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-botao);
+  background: var(--papel);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: left;
+  transition:
+    background-color var(--dur-media) var(--ease-out),
+    border-color var(--dur-media) var(--ease-out),
+    color var(--dur-media) var(--ease-out);
+}
+.pecas__item .numeros {
+  color: var(--tinta-suave);
+  margin-right: 4px;
+}
+.pecas__item[aria-pressed='true'] {
+  background: var(--laranja);
+  border-color: var(--laranja);
+  color: var(--preto);
+}
+.pecas__item[aria-pressed='true'] .numeros {
+  color: inherit;
+}
+@media (hover: hover) {
+  .pecas__item:hover {
+    border-color: var(--azul);
+    color: var(--azul-texto);
+  }
+}
+
+/* Progresso: cinco marcas em linha, no pé do palco */
+.palco__progresso {
+  position: absolute;
+  left: var(--margem);
+  right: var(--margem);
+  bottom: var(--s-6);
+  z-index: var(--z-rotulos);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+.palco__progresso li {
+  display: grid;
+  gap: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 2px solid var(--linha-forte);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  transition:
+    color var(--dur-media) var(--ease-out),
+    border-color var(--dur-media) var(--ease-out);
+}
+.palco__progresso li.feita {
+  border-color: var(--tinta-suave);
+}
+.palco__progresso li.atual {
+  border-color: var(--azul);
+  color: var(--tinta);
+}
+.palco__progresso-nome {
+  display: block;
+}
+
+/* Ficha da peça selecionada */
+.ficha {
+  position: absolute;
+  right: var(--margem);
+  bottom: calc(var(--s-6) + 4.5rem);
+  z-index: var(--z-rotulos);
+  width: min(21rem, 28vw);
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-ui);
+  background: var(--papel);
+}
+.ficha[hidden] {
+  display: none;
+}
+.ficha__texto {
+  color: var(--tinta-suave);
+  font-size: 0.9375rem;
+}
+.ficha__voltar {
+  justify-self: start;
+  margin-top: var(--s-2);
+  min-height: 44px;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 1099px) {
+  .seletor {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .palco__painel {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    transform: none;
+    gap: var(--s-3);
+    padding: var(--s-4) var(--margem) max(var(--s-4), env(safe-area-inset-bottom));
+    background: var(--papel);
+    border-top: 1px solid var(--linha);
+  }
+  .palco__num {
+    font-size: 2.25rem;
+  }
+  .palco__texto {
+    font-size: 0.9375rem;
+  }
+  .pecas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--margem) * -1);
+    padding-inline: var(--margem);
+  }
+  .pecas__item {
+    white-space: nowrap;
+  }
+  .palco__progresso {
+    top: calc(56px + var(--s-4));
+    bottom: auto;
+    gap: var(--s-1);
+  }
+  .palco__progresso li {
+    padding-top: 0;
+    font-size: 0;
+  }
+  .ficha {
+    left: var(--margem);
+    right: var(--margem);
+    top: calc(56px + var(--s-7));
+    bottom: auto;
+    width: auto;
+    padding: var(--s-4);
+  }
+  .palco__linhas {
+    display: none;
+  }
+  .marcador__nome {
+    display: none;
+  }
+  .palco__alternativa {
+    padding: 8% 4% 40%;
+  }
+}

@@ -1,0 +1,101 @@
+.diferenciais {
+  display: grid;
+  gap: var(--s-8);
+}
+.diferenciais__cabeca {
+  display: grid;
+  gap: var(--s-5);
+}
+.diferenciais__cabeca .titulo {
+  max-width: 12ch;
+}
+
+/* Regras: quatro colunas sem cartões */
+.regras {
+  display: grid;
+  gap: var(--s-6);
+}
+.regras__lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-6) var(--gutter);
+  border-top: 1px solid var(--linha-forte);
+  padding-top: var(--s-5);
+}
+.regras__lista dt {
+  font-weight: 700;
+  margin-bottom: var(--s-2);
+}
+.regras__lista dd {
+  color: var(--tinta-suave);
+  font-size: 0.9375rem;
+}
+
+/* Situação do projeto (a classe .estado pertence ao painel da sessão) */
+.situacao {
+  display: grid;
+  gap: var(--s-6);
+}
+.situacao__colunas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gutter);
+}
+.situacao__colunas > div {
+  padding: var(--s-6);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-ui);
+  background: var(--papel-2);
+}
+.situacao__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+  font-weight: 700;
+}
+.situacao__titulo::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.situacao__titulo--feito::before {
+  background: var(--oliva);
+}
+.situacao__titulo--falta::before {
+  border: 2px solid var(--amarelo);
+}
+.situacao ul {
+  display: grid;
+  gap: var(--s-3);
+}
+.situacao li {
+  padding-left: var(--s-5);
+  position: relative;
+  color: var(--tinta-suave);
+}
+.situacao li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.8em;
+  width: 10px;
+  height: 1px;
+  background: var(--linha-forte);
+}
+
+@media (max-width: 899px) {
+  .regras__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .situacao__colunas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 519px) {
+  .regras__lista {
+    grid-template-columns: 1fr;
+  }
+}

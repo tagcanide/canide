@@ -1,0 +1,26 @@
+{
+  "name": "canide-site",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev:remoto": "vite --mode emulador --port 5174",
+    "emulador": "firebase-tools emulators:start --project demo-canide-remoto --only auth,database"
+  },
+  "dependencies": {
+    "animejs": "^4.5.0",
+    "firebase": "^12.19.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.3.0",
+    "shadcn": "^4.23.0",
+    "vite": "^8.3.8"
+  }
+}

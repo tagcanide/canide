@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NodeMCU V3 ESP8266 (ESP-12) — Exploded View</title>
+<style>
+  :root{
+    --bg1:#f7f7f4; --bg2:#e8e8e3; --ink:#1d1f22; --muted:#6b6f75; --line:#2a2d31;
+    --accent:#0a84ff; --panel:rgba(255,255,255,.82);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+    background:radial-gradient(ellipse at 50% 35%,var(--bg1) 0%,var(--bg2) 100%);
+    display:flex;flex-direction:column;min-height:100vh;overflow:hidden;
+  }
+  header{padding:18px 28px 0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  header span{font-size:13px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  #stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 12px}
+  #stage svg{width:100%;height:100%;max-height:calc(100vh - 130px);display:block}
+  .controls{
+    margin:0 auto 18px;display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:var(--panel);backdrop-filter:blur(8px);border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);width:min(860px,calc(100% - 24px));
+  }
+  .controls button{
+    appearance:none;border:0;background:var(--ink);color:#fff;width:40px;height:40px;border-radius:10px;
+    display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .15s ease,background .2s;
+  }
+  .controls button:hover{transform:translateY(-1px);background:#000}
+  .controls button.ghost{background:transparent;color:var(--ink);border:1px solid rgba(0,0,0,.15);width:auto;padding:0 12px;font:600 12px Inter,sans-serif;letter-spacing:.04em}
+  .controls button.ghost:hover{background:rgba(0,0,0,.05)}
+  .controls svg{width:16px;height:16px}
+  input[type=range]{flex:1;accent-color:var(--ink);height:4px;cursor:pointer}
+  .pct{font:600 12px/1 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--muted);width:40px;text-align:right}
+  .opt{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none}
+  .opt input{accent-color:var(--ink)}
+  select{font:600 12px Inter,sans-serif;border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 6px;background:#fff;color:var(--ink)}
+  /* SVG interaction */
+  .part{cursor:pointer;transition:filter .25s ease}
+  .part.hl{filter:drop-shadow(0 0 5px rgba(10,132,255,.85)) brightness(1.08)}
+  .lbl{cursor:pointer}
+  .lbl text{transition:fill .2s}
+  .lbl.hl text{fill:var(--accent)}
+  .lbl.hl path,.lbl.hl circle{stroke:var(--accent)}
+  .lbl.hl circle{fill:var(--accent)}
+  @media (max-width:640px){.opt.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>NodeMCU V3 · ESP8266 (ESP-12)</h1><span>Exploded view · isometric</span>
+</header>
+<div id="stage"></div>
+<div class="controls">
+  <button id="play" title="Play / Pause (Espaço)" aria-label="Play/Pause"></button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Progresso">
+  <span class="pct" id="pct">0%</span>
+  <button class="ghost" id="toA" title="Ir para montado">Montado</button>
+  <button class="ghost" id="toB" title="Ir para explodido">Explodido</button>
+  <label class="opt hide-sm"><select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+  <label class="opt"><input type="checkbox" id="loop" checked>Loop</label>
+  <label class="opt hide-sm"><input type="checkbox" id="labels" checked>Rótulos</label>
+</div>
+
+<script>
+// <core>
+/* ================= ISOMETRIC CORE (pure, no DOM) ================= */
+const S = 13;                         // px per mm
+const C = Math.cos(Math.PI/6), H = 0.5;
+const CX = 15.5, CY = 29.5;              // view centre (mm)
+const P = (x,y,z=0) => [ (x - y - (CX-CY))*C*S, ((x + y) - (CX+CY))*H*S - z*S ];
+const pts = a => a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+const shade = (hex,k) => { const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,Math.round(((n>>16)&255)*k)), g=Math.min(255,Math.round(((n>>8)&255)*k)), b=Math.min(255,Math.round((n&255)*k));
+  return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1); };
+const area = poly => { let a=0; for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length]; a+=p[0]*q[1]-q[0]*p[1];} return a/2; };
+function rectPoly(cx,cy,w,d,rot=0){
+  const r=rot*Math.PI/180, c=Math.cos(r), s=Math.sin(r);
+  return [[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([x,y])=>[cx+x*c-y*s, cy+x*s+y*c]);
+}
+// extruded polygon; returns svg string
+function prism(poly,z0,z1,color,o={}){
+  const A=area(poly), faces=[];
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i], b=poly[(i+1)%poly.length];
+    let nx=b[1]-a[1], ny=-(b[0]-a[0]); if(A<0){nx=-nx;ny=-ny;}
+    const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+    if(nx+ny<=0.001) continue;
+    const k=0.60*(nx>0?nx*nx:0)+0.80*(ny>0?ny*ny:0);
+    faces.push({d:(a[0]+a[1]+b[0]+b[1])/2, s:`<polygon points="${pts([P(a[0],a[1],z0),P(b[0],b[1],z0),P(b[0],b[1],z1),P(a[0],a[1],z1)])}" fill="${o.side||shade(color,k)}"/>`});
+  }
+  faces.sort((p,q)=>p.d-q.d);
+  const st=o.stroke===false?'':` stroke="${o.stroke||'rgba(0,0,0,.35)'}" stroke-width="${o.sw||0.6}" stroke-linejoin="round"`;
+  return `<g${st}>${faces.map(f=>f.s).join('')}<polygon points="${pts(poly.map(p=>P(p[0],p[1],z1)))}" fill="${o.top||color}"/></g>`;
+}
+const box=(cx,cy,w,d,z0,z1,color,rot=0,o={})=>prism(rectPoly(cx,cy,w,d,rot),z0,z1,color,o);
+function flat(poly,z,fill,o={}){ return `<polygon points="${pts(poly.map(p=>P(p[0],p[1],z)))}" fill="${fill}"${o.stroke?` stroke="${o.stroke}" stroke-width="${o.sw||0.6}"`:''}${o.op!=null?` opacity="${o.op}"`:''}/>`; }
+const ell=(x,y,z,r,fill,o='')=>{const [X,Y]=P(x,y,z);return `<ellipse cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" rx="${(1.2247*r*S).toFixed(2)}" ry="${(0.7071*r*S).toFixed(2)}" fill="${fill}" ${o}/>`;};
+function cyl(x,y,z0,z1,r,color){
+  const [X,Y0]=P(x,y,z0),[,Y1]=P(x,y,z1),rx=1.2247*r*S, ry=0.7071*r*S;
+  return `<g><path d="M${(X-rx).toFixed(1)},${Y1.toFixed(1)} L${(X-rx).toFixed(1)},${Y0.toFixed(1)} A${rx.toFixed(1)},${ry.toFixed(1)} 0 0 0 ${(X+rx).toFixed(1)},${Y0.toFixed(1)} L${(X+rx).toFixed(1)},${Y1.toFixed(1)} Z" fill="${shade(color,.7)}"/>`+
+    `<ellipse cx="${X.toFixed(1)}" cy="${Y1.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${color}" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`+
+    `<ellipse cx="${(X-rx*.25).toFixed(1)}" cy="${(Y1-ry*.25).toFixed(1)}" rx="${(rx*.35).toFixed(1)}" ry="${(ry*.3).toFixed(1)}" fill="rgba(255,255,255,.18)"/></g>`;
+}
+// text lying on a horizontal plane
+function isoText(str,x,y,z,size,fill,rot=0,o={}){
+  const r=rot*Math.PI/180, ex=[Math.cos(r),Math.sin(r)], ey=[-Math.sin(r),Math.cos(r)], [e,f]=P(x,y,z);
+  const m=[(ex[0]-ex[1])*C*S,(ex[0]+ex[1])*H*S,(ey[0]-ey[1])*C*S,(ey[0]+ey[1])*H*S,e,f].map(v=>v.toFixed(3)).join(' ');
+  return `<text transform="matrix(${m})" font-size="${size}" fill="${fill}" text-anchor="${o.anchor||'middle'}" dominant-baseline="central" font-family="Inter,Segoe UI,Arial,sans-serif" font-weight="${o.w||700}" letter-spacing="${o.ls||0}">${str}</text>`;
+}
+function seeded(seed){ let s=seed; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+
+/* ---------- palette ---------- */
+const COL={pcb:'#141517',edge:'#4a3f2a',gold:'#d6ab52',goldD:'#9c7430',silver:'#c9ccd0',tin:'#c4c7ca',
+  silk:'#e4e8ec',cap:'#b98d5c',black:'#1d1e21',chip:'#1f2023'};
+/* ---------- PCB (NodeMCU V3 · 31 × 58 mm) ---------- */
+const BW=31, BL=58, BT=1.6;
+function roundRect(x0,y0,x1,y1,r,n=6){const o=[];const c=[[x1-r,y0+r,-90],[x1-r,y1-r,0],[x0+r,y1-r,90],[x0+r,y0+r,180]];
+  for(const [cx,cy,a0] of c) for(let i=0;i<=n;i++){const a=(a0+90*i/n)*Math.PI/180;o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);} return o;}
+const BOARD=roundRect(0,0,BW,BL,2.2);
+const PITCH=2.54, PIN0=11.2, NP=15;
+const ROWX=[1.7,29.3];
+const PIN_Y=[...Array(NP)].map((_,i)=>PIN0+i*PITCH);
+const LEFT_NAMES=['A0','GND','VU','S3','S2','S1','SC','S0','SK','GND','3V3','EN','RST','GND','Vin'];
+const RIGHT_NAMES=['D0','D1','D2','D3','D4','3V3','GND','D5','D6','D7','D8','RX','TX','GND','3V3'];
+const HOLES=[[2.6,2.6],[28.4,2.6],[2.6,55.4],[28.4,55.4]];
+function meander(x0,y0,z,w,h,n){ // gold PCB antenna polyline
+  const p=[[x0,y0+h]]; const step=w/n;
+  for(let i=0;i<n;i++){const x=x0+i*step; p.push([x,y0+h],[x,y0],[x+step*0.5,y0],[x+step*0.5,y0+h]);} p.push([x0+w,y0+h],[x0+w+2.2,y0+h]);
+  return `<polyline points="${pts(p.map(q=>P(q[0],q[1],z)))}" fill="none" stroke="${COL.gold}" stroke-width="${(0.55*S).toFixed(1)}" stroke-linejoin="miter" stroke-linecap="square"/>`;
+}
+function boardSVG(){
+  let s='';
+  s+=`<g filter="url(#soft)" opacity=".38">${flat(BOARD.map(([x,y])=>[x+1.2,y+1.2]),-BT-3.5,'#000')}</g>`;
+  s+=prism(BOARD,-BT,0,COL.pcb,{top:'url(#pcbTop)',side:null,stroke:'rgba(0,0,0,.6)'});
+  // gold edge line on visible sides
+  s+=`<polyline points="${pts(BOARD.filter(([x,y])=>x>BW-2.3||y>BL-2.3).map(([x,y])=>P(x,y,-BT*0.5)))}" fill="none" stroke="#6c5a33" stroke-width="2" opacity=".55"/>`;
+  // traces
+  const tr=[[[6,14],[8,16],[8,26]],[[6.5,30],[9,33],[9,38]],[[16,36],[16,44],[18,46]],[[22,30],[22,36],[25,39],[26,39]],
+    [[4.2,44],[6,46],[9,46]],[[13,48],[13,51]],[[18,50],[20,52],[20,53]],[[26,13],[24,15]],[[10.4,30],[10.4,34]]];
+  for(const t of tr) s+=`<polyline points="${pts(t.map(p=>P(p[0],p[1],0)))}" fill="none" stroke="#23252a" stroke-width="${(0.42*S).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // antenna meander on the PCB (exposed when the module lifts)
+  s+=meander(13.0,3.2,0.001,9.6,5.2,4);
+  // via grid under module
+  for(let i=0;i<4;i++) for(let j=0;j<4;j++) if((i+j)%2===0||i===1) s+=ell(15.5+i*2.2,15+j*2.6,0,.36,'#7a5b2e')+ell(15.5+i*2.2,15+j*2.6,0,.18,'#0b0b0c');
+  // mounting holes
+  for(const [x,y] of HOLES) s+=ell(x,y,0,1.75,COL.gold)+ell(x,y,0,1.35,'#efefea')+ell(x,y,-0.02,1.35,'#0a0a0b','opacity=".08"');
+  // header pads
+  for(const x of ROWX) for(const y of PIN_Y) s+=ell(x,y,0,.95,COL.tin)+ell(x,y,0,.5,'#0c0c0d');
+  // silkscreen pin names
+  PIN_Y.forEach((y,i)=>{ s+=isoText(LEFT_NAMES[i],4.1,y,0,1.05,COL.silk,0,{anchor:'start',w:700});
+                          s+=isoText(RIGHT_NAMES[i],26.9,y,0,1.05,COL.silk,0,{anchor:'end',w:700}); });
+  s+=isoText('RST',6.8,50.6,0,1.05,COL.silk,0)+isoText('IO0',21.6,50.6,0,1.05,COL.silk,0);
+  // static small parts
+  const statics=[[11.6,2.4,0],[24.2,9.6,90],[6.5,36,90],[19.5,33,0],[9.5,44,0],[24.5,45,90],[16.5,50,0],[13.3,46.8,90],[22.2,26.8,0]];
+  for(const [x,y,r] of statics) s+=passive(x,y,r,0,'0603');
+  s+=sot23(8.2,46.8,0)+sot23(11.6,48.4,0);
+  return s;
+}
+function passive(x,y,rot,z0,kind){
+  const big=kind==='0805', L=big?2.0:1.6, W=big?1.25:0.8, h=big?0.7:0.55, cap=big?0.4:0.32;
+  const res=kind==='res';
+  let s=box(x,y,L,W,z0,z0+h,res?'#141416':COL.cap,rot,{sw:.4});
+  const r=rot*Math.PI/180, ux=Math.cos(r), uy=Math.sin(r);
+  for(const sg of [-1,1]){ s+=box(x+ux*sg*(L/2-cap/2),y+uy*sg*(L/2-cap/2),cap,W*1.02,z0,z0+h*1.02,COL.silver,rot,{sw:.4}); }
+  if(res) s+=isoText('103',x,y,z0+h+.001,0.5,'#d0d0d0',rot,{w:600});
+  return s;
+}
+function sot23(x,y,rot){ let s='';
+  for(const [u,v] of [[-0.95,1.1],[0.95,1.1],[0,-1.1]]) s+=box(x+u,y+v,0.45,0.7,0,0.3,COL.silver,0,{sw:.4});
+  return s+box(x,y,2.9,1.5,0.05,1.0,'#18191b',rot,{top:'#222327'}); }
+function diode(x,y,rot){ // glass MELF
+  let s=box(x,y,3.4,1.3,0,1.2,'#b8402f',rot,{top:'url(#melf)',sw:.5});
+  const r=rot*Math.PI/180;
+  for(const sg of [-1,1]) s+=box(x+Math.cos(r)*sg*1.45,y+Math.sin(r)*sg*1.45,0.5,1.36,0,1.24,COL.silver,rot,{sw:.4});
+  s+=box(x+Math.cos(r)*0.75,y+Math.sin(r)*0.75,0.35,1.33,0,1.22,'#1c1c1c',rot,{stroke:false});
+  return s; }
+function padsRect(cx,cy,w,d,rot=0,fill=COL.tin){ return flat(rectPoly(cx,cy,w,d,rot),0.001,fill,{stroke:'#8d9093',sw:.4}); }
+const goldPad=(cx,cy,w,d,rot=0)=>flat(rectPoly(cx,cy,w,d,rot),0.002,COL.gold,{stroke:COL.goldD,sw:.4});
+
+/* ---------- COMPONENTS ---------- */
+// displacement along ONE horizontal isometric axis (x or y) + vertical z, solved so the part lands at screen (TX,TY)
+function iso(x,y,axis,TX,TY,dz){
+  if(axis==='z') return [0,0,dz];
+  if(axis==='x'){ const dx=TX/(C*S)+(CX-CY)-(x-y); const dzz=((x+dx+y-(CX+CY))*H*S-TY)/S; return [dx,0,dzz]; }
+  const dy=(x-y)-(CX-CY)-TX/(C*S); const dzz=((x+y+dy-(CX+CY))*H*S-TY)/S; return [0,dy,dzz];
+}
+const PARTS=[];
+const addPart=o=>PARTS.push(o);
+// ESP-12 module : 16 × 24 mm, antenna end towards y=0
+const MOD={x0:11,x1:27,y0:2.6,y1:26.6};
+addPart({id:'mod',label:'ESP-12 Wi-Fi Module',side:'R',x:19,y:14.6,disp:[0.6,-0.6,14.5],delay:0.0,topZ:3.0,
+  foot:rectPoly(19,14.6,16,24),
+  pads:()=>{let s='';for(let i=0;i<8;i++){const y=12.4+i*2.0; s+=goldPad(11.6,y,1.6,1.0)+goldPad(26.4,y,1.6,1.0);}
+    for(let i=0;i<6;i++) s+=goldPad(14+i*2.0,26.0,1.0,1.4); return s;},
+  draw:()=>{let s=prism([[MOD.x0,MOD.y0],[MOD.x1,MOD.y0],[MOD.x1,MOD.y1],[MOD.x0,MOD.y1]],0,0.9,'#17181a',{top:'#1c1d20'});
+    // castellations on visible +x face and top pads
+    for(let i=0;i<8;i++){const y=12.4+i*2.0;
+      s+=`<polygon points="${pts([P(27,y-.5,0),P(27,y+.5,0),P(27,y+.5,.9),P(27,y-.5,.9)])}" fill="${COL.goldD}"/>`;
+      s+=flat(rectPoly(11.6,y,1.2,0.9),0.901,COL.gold)+flat(rectPoly(26.4,y,1.2,0.9),0.901,COL.gold);
+      s+=ell(11.25,y,0.902,.25,'#3a2c12')+ell(26.75,y,0.902,.25,'#3a2c12');}
+    for(let i=0;i<6;i++){const x=14+i*2.0; s+=`<polygon points="${pts([P(x-.5,26.6,0),P(x+.5,26.6,0),P(x+.5,26.6,.9),P(x-.5,26.6,.9)])}" fill="${COL.goldD}"/>`+flat(rectPoly(x,26.0,0.9,1.2),0.901,COL.gold);}
+    s+=meander(13.0,3.2,0.902,9.6,5.2,4);
+    // metal shield
+    s+=box(19,19.0,12.6,14.6,0.9,1.15,'#b4b7bb',0,{sw:.5});
+    s+=box(19,19.0,12.2,14.2,1.15,3.0,'#c9ccd0',0,{top:'url(#metal)',sw:.6});
+    s+=isoText('ESP8266MOD',19,16.4,3.001,1.25,'#8a8e93',0,{w:700,ls:.05})+isoText('Wi-Fi  802.11 b/g/n',19,18.6,3.001,0.85,'#8f9398',0,{w:600})+isoText('ISM 2.4GHz · FCC',19,20.4,3.001,0.7,'#959a9f',0,{w:600});
+    s+=`<g opacity=".55">${flat(rectPoly(16.0,23.6,2.6,1.8),3.001,'none',{stroke:'#8f9398',sw:1})}</g>`+ell(23.4,23.6,3.001,.9,'none','stroke="#8f9398" stroke-width="1"');
+    return s;}});
+// CH340C (SOIC-16) — long axis along x
+addPart({id:'ch',label:'CH340C USB-to-Serial IC',side:'L',x:12.5,y:41,disp:iso(12.5,41,'x',-330,-330),delay:0.08,topZ:1.6,
+  foot:rectPoly(12.5,41,10.2,6.2),
+  pads:()=>{let s='';for(let i=0;i<8;i++){const x=12.5-4.445+i*1.27; s+=padsRect(x,38.3,0.65,1.6)+padsRect(x,43.7,0.65,1.6);} return s;},
+  draw:()=>{let s='';
+    for(let i=0;i<8;i++){const x=12.5-4.445+i*1.27;
+      s+=box(x,38.4,0.42,1.2,0,0.25,COL.silver,0,{sw:.3})+box(x,39.2,0.42,0.5,0.25,0.75,COL.silver,0,{sw:.3});
+      s+=box(x,43.6,0.42,1.2,0,0.25,COL.silver,0,{sw:.3})+box(x,42.8,0.42,0.5,0.25,0.75,COL.silver,0,{sw:.3});}
+    s+=box(12.5,41,9.9,3.9,0.15,1.6,COL.chip,0,{top:'#232428'});
+    s+=ell(8.4,39.9,1.601,.35,'#3a3c40');
+    s+=isoText('CH340C',12.5,40.6,1.601,1.05,'#9a9ea4',0,{w:700})+isoText('2104 · WCH',12.5,41.9,1.601,0.7,'#80848a',0,{w:600});
+    return s;}});
+// AMS1117 (SOT-223)
+addPart({id:'reg',label:'AMS1117 3.3V Voltage Regulator',side:'L',x:14.2,y:30.4,disp:iso(14.2,30.4,'y',-470,-175),delay:0.16,topZ:1.6,
+  foot:rectPoly(14.2,30.4,7.0,6.8),
+  pads:()=>[-2.3,0,2.3].map(v=>padsRect(11.1,30.4+v,1.6,1.0)).join('')+padsRect(17.3,30.4,1.6,3.4),
+  draw:()=>{let s='';
+    for(const v of [-2.3,0,2.3]) s+=box(11.2,30.4+v,1.4,0.7,0,0.25,COL.silver,0,{sw:.3});
+    s+=box(17.2,30.4,1.6,3.1,0,0.3,COL.silver,0,{top:'url(#metal)',sw:.4});
+    s+=box(14.2,30.4,3.6,6.5,0.05,1.6,COL.black,0,{top:'#222327'});
+    s+=isoText('AMS1117',14.2,30.4,1.601,0.8,'#9a9ea4',90,{w:700})+isoText('3.3',15.3,30.4,1.601,0.7,'#9a9ea4',90,{w:600});
+    return s;}});
+// Buttons
+function button(cx,cy){ let s='';
+  for(const [u,v] of [[-2.25,-1.1],[2.25,-1.1],[-2.25,1.1],[2.25,1.1]]) s+=box(cx+u,cy+v,0.6,0.6,0,0.35,COL.silver,0,{sw:.4});
+  s+=box(cx,cy,4.2,3.2,0,0.9,'#1f2023',0,{sw:.5});
+  s+=box(cx,cy,4.2,3.2,0.9,1.25,COL.silver,0,{top:'url(#metal)',sw:.5});
+  s+=flat(rectPoly(cx,cy,2.6,2.1),1.251,'#b3b6ba',{stroke:'#8b8f93',sw:.5});
+  return s+cyl(cx,cy,1.25,1.8,0.8,'#25262a'); }
+const btnPads=(cx,cy)=>[[-2.25,-1.1],[2.25,-1.1],[-2.25,1.1],[2.25,1.1]].map(([u,v])=>padsRect(cx+u,cy+v,1.0,0.9)).join('');
+addPart({id:'rst',label:'RST Button',side:'L',x:7.0,y:53.6,disp:iso(7,53.6,'y',-640,-10),delay:0.22,topZ:1.8,foot:rectPoly(7,53.6,4.8,3.2),pads:()=>btnPads(7,53.6),draw:()=>button(7,53.6)});
+addPart({id:'io0',label:'IO0 Button',side:'L',x:21.6,y:53.6,disp:iso(21.6,53.6,'y',-560,250),delay:0.27,topZ:1.8,foot:rectPoly(21.6,53.6,4.8,3.2),pads:()=>btnPads(21.6,53.6),draw:()=>button(21.6,53.6)});
+// SMD movers (right group)
+const SMD=[
+  {id:'c1',x:22.6,y:31.4,rot:0,kind:'tant',disp:iso(22.6,31.4,'x',560,-40),delay:0.30},
+  {id:'d1',x:19.0,y:46.6,rot:90,kind:'diode',disp:iso(19,46.6,'x',610,30),delay:0.34},
+  {id:'d2',x:24.0,y:49.8,rot:0,kind:'diode',disp:iso(24,49.8,'x',555,100),delay:0.38},
+  {id:'r1',x:25.0,y:36.0,rot:90,kind:'res',disp:iso(25,36,'x',600,-115),delay:0.42},
+  {id:'c2',x:9.0,y:28.0,rot:90,kind:'0805',disp:iso(9,28,'x',635,-45),delay:0.36},
+];
+for(const c of SMD){
+  addPart({id:c.id,group:'smd',label:'SMD Resistors / Capacitors / Diodes',side:'R',x:c.x,y:c.y,disp:c.disp,delay:c.delay,topZ:1.2,
+    foot:rectPoly(c.x,c.y,c.kind==='diode'||c.kind==='tant'?3.6:2.0,1.4,c.rot),
+    pads:()=>{const r=c.rot*Math.PI/180,o=c.kind==='diode'||c.kind==='tant'?1.5:0.85;return [-1,1].map(sg=>padsRect(c.x+Math.cos(r)*sg*o,c.y+Math.sin(r)*sg*o,1.0,1.5,c.rot)).join('');},
+    draw:()=> c.kind==='diode'? diode(c.x,c.y,c.rot)
+      : c.kind==='tant'? box(c.x,c.y,3.4,1.7,0,1.5,'#d8b66a',c.rot,{top:'#e2c47c'})+box(c.x+1.45,c.y,0.5,1.75,0,0.6,COL.silver,c.rot,{sw:.3})+box(c.x-1.45,c.y,0.5,1.75,0,0.6,COL.silver,c.rot,{sw:.3})+flat(rectPoly(c.x-1.0,c.y,0.35,1.7,c.rot),1.501,'#8a6d2e')
+      : passive(c.x,c.y,c.rot,0,c.kind)});
+}
+// Male pin headers (2 × 15) — move down
+function headerParts(x,side){
+  const yc=PIN0+(NP-1)*PITCH/2, len=NP*PITCH, zb=-BT-2.5, zt=-BT;
+  const under=()=>{let s=box(x,yc,2.5,len,zb,zt,'#1b1c1e',0,{top:'#26272a'});
+    for(let i=0;i<NP;i++) s+=box(x,PIN_Y[i],2.5,PITCH,zb,zt,'#1b1c1e',0,{stroke:'rgba(255,255,255,.06)'});
+    // lower pins
+    const pins=[]; for(let i=0;i<NP;i++) pins.push(box(x,PIN_Y[i],0.64,0.64,zb-6.0,zb,'#b9bcc0',0,{top:'#d4d6d9',sw:.4})+pyramid(x,PIN_Y[i],zb-6.0,-0.5));
+    return pins.join('')+s;};
+  const tips=()=>{let s=''; for(let i=0;i<NP;i++) s+=box(x,PIN_Y[i],0.64,0.64,-BT,1.2,'#b9bcc0',0,{top:'#e2e4e6',sw:.4})+ell(x,PIN_Y[i],0.05,.7,'rgba(200,203,207,.65)'); return s;};
+  return {under,tips,yc};
+}
+function pyramid(x,y,z,dz){ const a=P(x-.32,y-.32,z),b=P(x+.32,y-.32,z),c=P(x+.32,y+.32,z),d=P(x-.32,y+.32,z),t=P(x,y,z+dz);
+  return `<polygon points="${pts([d,c,t])}" fill="#9a9da1"/><polygon points="${pts([c,b,t])}" fill="#85888c"/>`; }
+for(const [x,side,disp,delay] of [[ROWX[0],'L',[-3.0,3.0,-10.5],0.10],[ROWX[1],'R',[4.4,0,-9.0],0.05]]){
+  const h=headerParts(x,side);
+  addPart({id:'hdr'+side,kind:'hdr',group:side==='R'?'hdr':'hdrL',label:'Male Pin Headers',side:'R',noLabel:side==='L',x:x,y:h.yc,disp,delay,topZ:-2*(BT+1.25),
+    pads:()=>'', draw:()=>'', under:h.under(), tips:h.tips(), pinPts:PIN_Y.map(y=>[x,y])});
+}
+/* ---------- labels ---------- */
+const EXTRA=[
+  {id:'pcb',label:'Black PCB with Gold Antenna',side:'R',pt:()=>P(22.6,5.8,0),from:0.35},
+  {id:'usb',label:'Micro-USB Port',side:'L',pt:()=>P(14.0,57.4,1.4),from:0.45},
+];
+const LX=690;
+function partOffset(pt,k){ const [dx,dy,dz]=pt.disp; return [(dx*k - dy*k)*C*S, (dx*k + dy*k)*H*S - dz*k*S]; }
+function anchorOf(pt,k){ const [ox,oy]=partOffset(pt,k); const [X,Y]=P(pt.x,pt.y,pt.topZ*0.5); return [X+ox,Y+oy]; }
+const LABELS=[];
+(function(){
+  const groups={};
+  for(const p of PARTS){ if(p.noLabel) continue; const key=p.group||p.id; (groups[key]=groups[key]||[]).push(p); }
+  for(const key in groups){ const g=groups[key]; LABELS.push({id:key,label:g[0].label,side:g[0].side,parts:g}); }
+  for(const e of EXTRA) LABELS.push({id:e.id,label:e.label,side:e.side,extra:e});
+  for(const side of ['L','R']){
+    const L=LABELS.filter(l=>l.side===side);
+    for(const l of L){ const a=l.parts? l.parts.map(p=>anchorOf(p,1)) : [l.extra.pt()]; l.want=a.reduce((s,v)=>s+v[1],0)/a.length; }
+    L.sort((a,b)=>a.want-b.want);
+    let y=-1e9; for(const l of L){ y=Math.max(l.want,y+64); l.y=y; }
+  }
+})();
+// static micro-USB (part of the board, drawn above pads)
+function microUSB(){ const x0=10.2,x1=17.8,y0=52.6,y1=58.6,h=2.7;
+  let s=box(14,y0+0.6,8.2,1.0,0,0.4,COL.silver,0,{sw:.4});
+  s+=box(14,(y0+y1)/2,x1-x0,y1-y0,0,h,'#c6c9cd',0,{top:'url(#metal)',sw:.7});
+  // opening on front face (y1)
+  const op=[P(x0+0.6,y1,0.5),P(x1-0.6,y1,0.5),P(x1-0.25,y1,h-0.45),P(x0+0.25,y1,h-0.45)];
+  s+=`<polygon points="${pts(op)}" fill="#151618"/>`+`<polygon points="${pts([P(x0+2,y1-0.05,1.3),P(x1-2,y1-0.05,1.3),P(x1-2,y1-0.05,1.7),P(x0+2,y1-0.05,1.7)])}" fill="#2d2f33"/>`;
+  s+=flat(rectPoly(12.0,54.2,1.0,1.8),h+.001,'#5c6065')+flat(rectPoly(16.0,54.2,1.0,1.8),h+.001,'#5c6065');
+  for(const xx of [x0-0.2,x1+0.2]) s+=box(xx,y0+1.6,0.5,2.2,0,1.4,COL.silver,0,{sw:.4});
+  return s; }
+/* ---------- timeline ---------- */
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const SPAN=0.52;
+const local=(p,part)=>ease(clamp((p-part.delay)/SPAN));
+
+/* ---------- render ---------- */
+const DEFS=`<defs>
+<linearGradient id="pcbTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#232429"/><stop offset=".55" stop-color="#18191c"/><stop offset="1" stop-color="#121315"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset=".5" stop-color="#c3c6ca"/><stop offset="1" stop-color="#e2e4e7"/></linearGradient>
+<linearGradient id="usbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f2f4"/><stop offset=".45" stop-color="#b9bcc1"/><stop offset=".7" stop-color="#d6d8dc"/><stop offset="1" stop-color="#8b8f95"/></linearGradient>
+<linearGradient id="melf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e58c72"/><stop offset=".5" stop-color="#b3392b"/><stop offset="1" stop-color="#7d2219"/></linearGradient>
+<linearGradient id="usbTop" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe1e4"/><stop offset=".5" stop-color="#f7f8f9"/><stop offset="1" stop-color="#c9ccd0"/></linearGradient>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="softS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>`;
+const BOARD_SVG=boardSVG()+'';
+const USB_SVG=microUSB();
+const PADS_SVG=PARTS.map(p=>p.pads()).join('');
+for(const p of PARTS){ p.svg=p.draw(); p.foot=p.foot||rectFoot(p); }
+function rectFoot(p){ // shadow footprint polygon (world) approximated by its pads bbox
+  const sizes={ant:[6.9,1.8],mcu:[5,5],xtal:[3.3,2.6],rst:[4.4,2.7],boot:[4.4,2.7],reg:[2.6,2.9],usb:[8.9,7.4]};
+  const [w,d]=sizes[p.id]||[1.6,0.8]; return rectPoly(p.x,p.y,w,d,p.id==='mcu'?45:0);
+}
+function render(p,opt={}){
+  const hov=opt.hover||null, showLabels=opt.labels!==false;
+  let out=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1250 -620 2500 1260" font-family="Inter,Segoe UI,Arial,sans-serif">${DEFS}`;
+  for(const pt of PARTS) if(pt.kind==='hdr'){ const k=local(p,pt),[ox,oy]=partOffset(pt,k); const key=pt.group||pt.id;
+    out+=`<g class="part${hov===key||(hov==='hdr'&&key==='hdrL')?' hl':''}" data-id="hdr" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.under}${k*pt.disp[2]<=-1.9?pt.tips:''}</g>`; }
+  out+=`<g>${BOARD_SVG}${PADS_SVG}${USB_SVG}</g>`;
+  for(const pt of PARTS) if(pt.kind==='hdr'){ const k=local(p,pt); if(k*pt.disp[2]>-1.9){ const [ox,oy]=partOffset(pt,k);
+    out+=`<g class="part${hov==='hdr'?' hl':''}" data-id="hdr" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.tips}</g>`; } }
+  // shadows on board
+  out+='<g>';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.001||pt.kind==='hdr') continue;
+    const op=0.42*(1-0.75*k); const [ox,oy]=partOffset(pt,k);
+    out+=`<g transform="translate(${(ox*0.18).toFixed(1)},${(oy*0).toFixed(1)})" filter="url(#softS)" opacity="${op.toFixed(3)}">${flat(pt.foot,0.01,'#000')}</g>`; }
+  out+='</g>';
+  // guides
+  out+='<g fill="none" stroke="#5f6368" stroke-width="1.3" stroke-dasharray="6 5">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01) continue;
+    if(pt.pinPts){ const [ox,oy]=partOffset(pt,k); for(const [px,py] of pt.pinPts){ const [ax,ay]=P(px,py,0),[,ty]=P(px,py,1.9);
+      out+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(ax+ox).toFixed(1)}" y2="${(ty+oy).toFixed(1)}" opacity="${(clamp(k*5)*0.7).toFixed(2)}"/>`; } continue; }
+    const [ax,ay]=P(pt.x,pt.y,0), [ox,oy]=partOffset(pt,k);
+    out+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(ax+ox).toFixed(1)}" y2="${(ay+oy).toFixed(1)}" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g><g fill="#5f6368">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01||pt.pinPts) continue; const [ax,ay]=P(pt.x,pt.y,0);
+    out+=`<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="2.6" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g>';
+  // parts, painter's order by depth
+  const order=PARTS.filter(pt=>pt.kind!=='hdr').map(pt=>{const k=local(p,pt);return {pt,k,depth:pt.x+pt.y+(pt.disp[0]+pt.disp[1])*k+pt.disp[2]*k*1.0};}).sort((a,b)=>a.depth-b.depth);
+  for(const {pt,k} of order){ const [ox,oy]=partOffset(pt,k); const key=pt.group||pt.id;
+    out+=`<g class="part${hov===key?' hl':''}" data-id="${key}" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.svg}</g>`; }
+  // labels
+  if(showLabels){
+    out+='<g>';
+    for(const l of LABELS){
+      let a, anchors;
+      if(l.parts){ a=Math.max(...l.parts.map(pt=>local(p,pt))); anchors=l.parts.map(pt=>anchorOf(pt,local(p,pt))); a=clamp((a-0.5)/0.35); }
+      else { a=clamp((p-l.extra.from)/0.25); anchors=[l.extra.pt()]; }
+      if(a<=0.001) continue;
+      const left=l.side==='L', tx=left?-LX:LX, ex=left?-LX+12:LX-12, elbow=left?-LX+70:LX-70;
+      const col=hov===l.id?'#0a84ff':'#25282c';
+      let lines='';
+      for(const [x,y] of anchors){
+        const mx=elbow, my=l.y;
+        lines+=`<path d="M${ex},${l.y.toFixed(1)} L${mx},${my.toFixed(1)} L${x.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${col}" stroke-width="1.4"/>`+
+               `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/>`;
+      }
+      const dash = `stroke-dasharray="${(900*a).toFixed(0)} 2000"`;
+      out+=`<g class="lbl${hov===l.id?' hl':''}" data-id="${l.id}" opacity="${a.toFixed(3)}">`+
+        `<g ${dash}>${lines}</g>`+
+        `<text x="${tx}" y="${(l.y).toFixed(1)}" text-anchor="${left?'end':'start'}" dominant-baseline="central" font-size="22" font-weight="650" letter-spacing=".6" fill="${col}" transform="translate(${((1-a)*(left?-14:14)).toFixed(1)},0)">${l.label.toUpperCase()}</text>`+
+        `<rect x="${left?tx-430:tx-10}" y="${l.y-20}" width="440" height="40" fill="transparent"/></g>`;
+    }
+    out+='</g>';
+  }
+  return out+'</svg>';
+}
+// </core>
+
+/* ================= DOM / interaction ================= */
+if(typeof document!=='undefined'){
+  const stage=document.getElementById('stage'), scrub=document.getElementById('scrub'), pct=document.getElementById('pct'),
+        playBtn=document.getElementById('play'), loopEl=document.getElementById('loop'), labelsEl=document.getElementById('labels'),
+        speedEl=document.getElementById('speed');
+  const ICON_PLAY='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>';
+  const ICON_PAUSE='<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg>';
+  // cycle: explode 5.2s · hold 1.8s · assemble 3.6s · hold 1.2s
+  const T1=5.2,H1=1.8,T2=3.6,H2=1.2,CYCLE=T1+H1+T2+H2;
+  let t=0, playing=true, hover=null, last=performance.now(), p=0, tween=null, dirty=true;
+  function pFromT(tt){ tt=((tt%CYCLE)+CYCLE)%CYCLE;
+    if(tt<T1) return tt/T1; if(tt<T1+H1) return 1; if(tt<T1+H1+T2) return 1-(tt-T1-H1)/T2; return 0; }
+  function tFromP(pp,forward=true){ return forward? pp*T1 : T1+H1+(1-pp)*T2; }
+  function setPlaying(v){ playing=v; playBtn.innerHTML=v?ICON_PAUSE:ICON_PLAY; }
+  function draw(){ stage.innerHTML=render(p,{hover,labels:labelsEl.checked}); scrub.value=Math.round(p*1000); pct.textContent=Math.round(p*100)+'%'; dirty=false; }
+  function frame(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    if(tween){ tween.e+=dt; const k=ease(clamp(tween.e/tween.d)); p=tween.a+(tween.b-tween.a)*k; dirty=true;
+      if(tween.e>=tween.d){ t=tFromP(p,tween.b>tween.a); tween=null; } }
+    else if(playing){
+      t+=dt*parseFloat(speedEl.value);
+      if(!loopEl.checked && t>=T1){ t=T1; setPlaying(false); }
+      const np=pFromT(t); if(np!==p){p=np;dirty=true;}
+    }
+    if(dirty) draw();
+    requestAnimationFrame(frame);
+  }
+  playBtn.onclick=()=>{ if(!playing && !loopEl.checked && p>=1){ t=0; } setPlaying(!playing); };
+  scrub.addEventListener('input',()=>{ setPlaying(false); tween=null; p=scrub.value/1000; t=tFromP(p); dirty=true; });
+  document.getElementById('toA').onclick=()=>{ setPlaying(false); tween={a:p,b:0,d:Math.max(.4,1.4*p),e:0}; };
+  document.getElementById('toB').onclick=()=>{ setPlaying(false); tween={a:p,b:1,d:Math.max(.4,2.2*(1-p)),e:0}; };
+  labelsEl.onchange=()=>{dirty=true;};
+  stage.addEventListener('mouseover',e=>{ const g=e.target.closest('[data-id]'); const id=g?g.dataset.id:null; if(id!==hover){hover=id;dirty=true;} });
+  stage.addEventListener('mouseleave',()=>{hover=null;dirty=true;});
+  document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); playBtn.click(); }
+    if(e.code==='ArrowRight'){ setPlaying(false); p=clamp(p+0.02); t=tFromP(p); dirty=true; }
+    if(e.code==='ArrowLeft'){ setPlaying(false); p=clamp(p-0.02); t=tFromP(p); dirty=true; } });
+  setPlaying(true); draw(); requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>

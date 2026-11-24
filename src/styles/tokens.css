@@ -1,0 +1,104 @@
+/* Design system CANIDÉ · site institucional, direção clara e editorial
+   Paleta e tipografia do Manual de identidade (Edição 01). Branco aquecido como base, azul como protagonista,
+   as outras cores só em pontos com papel fixo. Sem gradientes, sem vidro.
+   Versões anteriores: backup/site-claro-2026-11-23/ e backup/site-escuro-2026-11-23/. */
+
+@font-face {
+  font-family: 'Open Sans';
+  src: url('/fonts/OpenSans-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Open Sans';
+  src: url('/fonts/OpenSans-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Serif';
+  src: url('/fonts/NotoSerif-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Cores da marca e o papel de cada uma */
+  --azul: #0367a6; /* campo de marca e dados */
+  --turquesa: #04adbf; /* interação: foco, seleção, item ativo */
+  --oliva: #5f7009; /* estado: funciona hoje */
+  --amarelo: #f29f05; /* ação principal */
+  --laranja: #f28705; /* destaque pontual: peça selecionada */
+  --branco: #ffffff;
+  --preto: #07090c;
+
+  /* Neutros claros: papel, passos de tom e tinta */
+  --papel: #fbfaf7; /* fundo, branco levemente aquecido */
+  --papel-2: #f3f2ec; /* superfície em passo de tom */
+  --papel-3: #e8e7df; /* controle */
+  --linha: rgba(3, 103, 166, 0.16); /* linhas de construção, no azul da marca */
+  --linha-forte: rgba(3, 103, 166, 0.38);
+  --tinta: #0b1218; /* texto principal: 18,6:1 */
+  --tinta-suave: #4a5661; /* texto secundário: 7,4:1 */
+  --azul-escuro: #024c7b;
+  --azul-texto: #0367a6; /* azul sobre papel: 5,6:1 */
+  --turquesa-texto: #037682; /* turquesa para texto pequeno sobre papel: 5,3:1 */
+  --oliva-claro: #8fa62a; /* oliva para pontos sobre fundo azul */
+
+  /* Tipografia */
+  --fonte-texto: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fonte-editorial: 'Noto Serif', Georgia, 'Times New Roman', serif;
+
+  /* Cinco tamanhos */
+  --t-display: clamp(3.25rem, 8vw, 8.5rem);
+  --t-titulo: clamp(2.4rem, 5.2vw, 5rem);
+  --t-subtitulo: clamp(1.25rem, 1.9vw, 1.75rem);
+  --t-corpo: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  --t-nota: 0.8125rem;
+
+  --entrelinha-display: 0.96;
+  --entrelinha-titulo: 1.02;
+  --entrelinha-texto: 1.6;
+  --tracking-display: -0.035em;
+  --tracking-rotulo: 0.12em;
+
+  /* Espaço */
+  --margem: clamp(1rem, 3vw, 2.5rem);
+  --gutter: clamp(1rem, 2vw, 2rem);
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+  --s-9: 6rem;
+  --secao: clamp(5.5rem, 11vw, 10rem);
+  --largura: 1440px;
+  --medida: 60ch;
+
+  /* Forma */
+  --raio-botao: 999px;
+  --raio-ui: 10px;
+  --raio-midia: 2px;
+
+  /* Camadas */
+  --z-cena: 0;
+  --z-conteudo: 1;
+  --z-rotulos: 5;
+  --z-nav: 50;
+  --z-pular: 100;
+
+  /* Movimento */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-rapida: 160ms;
+  --dur-media: 320ms;
+  --dur-lenta: 900ms;
+
+  color-scheme: light;
+}

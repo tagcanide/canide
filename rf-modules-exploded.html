@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receptores RF com antena dipolo em T — Exploded View</title>
+<style>
+  :root{
+    --bg1:#f7f7f4; --bg2:#e8e8e3; --ink:#1d1f22; --muted:#6b6f75; --line:#2a2d31;
+    --accent:#0a84ff; --panel:rgba(255,255,255,.82);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+    background:radial-gradient(ellipse at 50% 35%,var(--bg1) 0%,var(--bg2) 100%);
+    display:flex;flex-direction:column;min-height:100vh;overflow:hidden;
+  }
+  header{padding:18px 28px 0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  header span{font-size:13px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  #stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 12px}
+  #stage svg{width:100%;height:100%;max-height:calc(100vh - 130px);display:block}
+  .controls{
+    margin:0 auto 18px;display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:var(--panel);backdrop-filter:blur(8px);border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);width:min(860px,calc(100% - 24px));
+  }
+  .controls button{
+    appearance:none;border:0;background:var(--ink);color:#fff;width:40px;height:40px;border-radius:10px;
+    display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .15s ease,background .2s;
+  }
+  .controls button:hover{transform:translateY(-1px);background:#000}
+  .controls button.ghost{background:transparent;color:var(--ink);border:1px solid rgba(0,0,0,.15);width:auto;padding:0 12px;font:600 12px Inter,sans-serif;letter-spacing:.04em}
+  .controls button.ghost:hover{background:rgba(0,0,0,.05)}
+  .controls svg{width:16px;height:16px}
+  input[type=range]{flex:1;accent-color:var(--ink);height:4px;cursor:pointer}
+  .pct{font:600 12px/1 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--muted);width:40px;text-align:right}
+  .opt{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none}
+  .opt input{accent-color:var(--ink)}
+  select{font:600 12px Inter,sans-serif;border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 6px;background:#fff;color:var(--ink)}
+  /* SVG interaction */
+  .part{cursor:pointer;transition:filter .25s ease}
+  .part.hl{filter:drop-shadow(0 0 5px rgba(10,132,255,.85)) brightness(1.08)}
+  .lbl{cursor:pointer}
+  .lbl text{transition:fill .2s}
+  .lbl.hl text{fill:var(--accent)}
+  .lbl.hl path,.lbl.hl circle{stroke:var(--accent)}
+  .lbl.hl circle{fill:var(--accent)}
+  @media (max-width:640px){.opt.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Módulos RF · antena dipolo em T</h1><span>Exploded view · isometric</span>
+</header>
+<div id="stage"></div>
+<div class="controls">
+  <button id="play" title="Play / Pause (Espaço)" aria-label="Play/Pause"></button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Progresso">
+  <span class="pct" id="pct">0%</span>
+  <button class="ghost" id="toA" title="Ir para montado">Montado</button>
+  <button class="ghost" id="toB" title="Ir para explodido">Explodido</button>
+  <label class="opt hide-sm"><select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+  <label class="opt"><input type="checkbox" id="loop" checked>Loop</label>
+  <label class="opt hide-sm"><input type="checkbox" id="labels" checked>Rótulos</label>
+</div>
+
+<script>
+// <core>
+/* ================= ISOMETRIC CORE (pure, no DOM) ================= */
+const S = 15;                         // px per mm
+const C = Math.cos(Math.PI/6), H = 0.5;
+const CX = 19.5, CY = 1.5;              // view centre (mm)
+const P = (x,y,z=0) => [ (x - y - (CX-CY))*C*S, ((x + y) - (CX+CY))*H*S - z*S ];
+const pts = a => a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+const shade = (hex,k) => { const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,Math.round(((n>>16)&255)*k)), g=Math.min(255,Math.round(((n>>8)&255)*k)), b=Math.min(255,Math.round((n&255)*k));
+  return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1); };
+const area = poly => { let a=0; for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length]; a+=p[0]*q[1]-q[0]*p[1];} return a/2; };
+function rectPoly(cx,cy,w,d,rot=0){
+  const r=rot*Math.PI/180, c=Math.cos(r), s=Math.sin(r);
+  return [[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([x,y])=>[cx+x*c-y*s, cy+x*s+y*c]);
+}
+// extruded polygon; returns svg string
+function prism(poly,z0,z1,color,o={}){
+  const A=area(poly), faces=[];
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i], b=poly[(i+1)%poly.length];
+    let nx=b[1]-a[1], ny=-(b[0]-a[0]); if(A<0){nx=-nx;ny=-ny;}
+    const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+    if(nx+ny<=0.001) continue;
+    const k=0.60*(nx>0?nx*nx:0)+0.80*(ny>0?ny*ny:0);
+    faces.push({d:(a[0]+a[1]+b[0]+b[1])/2, s:`<polygon points="${pts([P(a[0],a[1],z0),P(b[0],b[1],z0),P(b[0],b[1],z1),P(a[0],a[1],z1)])}" fill="${o.side||shade(color,k)}"/>`});
+  }
+  faces.sort((p,q)=>p.d-q.d);
+  const st=o.stroke===false?'':` stroke="${o.stroke||'rgba(0,0,0,.35)'}" stroke-width="${o.sw||0.6}" stroke-linejoin="round"`;
+  return `<g${st}>${faces.map(f=>f.s).join('')}<polygon points="${pts(poly.map(p=>P(p[0],p[1],z1)))}" fill="${o.top||color}"/></g>`;
+}
+const box=(cx,cy,w,d,z0,z1,color,rot=0,o={})=>prism(rectPoly(cx,cy,w,d,rot),z0,z1,color,o);
+function flat(poly,z,fill,o={}){ return `<polygon points="${pts(poly.map(p=>P(p[0],p[1],z)))}" fill="${fill}"${o.stroke?` stroke="${o.stroke}" stroke-width="${o.sw||0.6}"`:''}${o.op!=null?` opacity="${o.op}"`:''}/>`; }
+const ell=(x,y,z,r,fill,o='')=>{const [X,Y]=P(x,y,z);return `<ellipse cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" rx="${(1.2247*r*S).toFixed(2)}" ry="${(0.7071*r*S).toFixed(2)}" fill="${fill}" ${o}/>`;};
+function cyl(x,y,z0,z1,r,color){
+  const [X,Y0]=P(x,y,z0),[,Y1]=P(x,y,z1),rx=1.2247*r*S, ry=0.7071*r*S;
+  return `<g><path d="M${(X-rx).toFixed(1)},${Y1.toFixed(1)} L${(X-rx).toFixed(1)},${Y0.toFixed(1)} A${rx.toFixed(1)},${ry.toFixed(1)} 0 0 0 ${(X+rx).toFixed(1)},${Y0.toFixed(1)} L${(X+rx).toFixed(1)},${Y1.toFixed(1)} Z" fill="${shade(color,.7)}"/>`+
+    `<ellipse cx="${X.toFixed(1)}" cy="${Y1.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${color}" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`+
+    `<ellipse cx="${(X-rx*.25).toFixed(1)}" cy="${(Y1-ry*.25).toFixed(1)}" rx="${(rx*.35).toFixed(1)}" ry="${(ry*.3).toFixed(1)}" fill="rgba(255,255,255,.18)"/></g>`;
+}
+// text lying on a horizontal plane
+function isoText(str,x,y,z,size,fill,rot=0,o={}){
+  const r=rot*Math.PI/180, ex=[Math.cos(r),Math.sin(r)], ey=[-Math.sin(r),Math.cos(r)], [e,f]=P(x,y,z);
+  const m=[(ex[0]-ex[1])*C*S,(ex[0]+ex[1])*H*S,(ey[0]-ey[1])*C*S,(ey[0]+ey[1])*H*S,e,f].map(v=>v.toFixed(3)).join(' ');
+  return `<text transform="matrix(${m})" font-size="${size}" fill="${fill}" text-anchor="${o.anchor||'middle'}" dominant-baseline="central" font-family="Inter,Segoe UI,Arial,sans-serif" font-weight="${o.w||700}" letter-spacing="${o.ls||0}">${str}</text>`;
+}
+function seeded(seed){ let s=seed; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+
+/* ---------- palette ---------- */
+const COL={pcb:'#151619',gold:'#d6ab52',goldD:'#9c7430',silver:'#c9ccd0',tin:'#c4c7ca',silk:'#e4e8ec',
+  cap:'#b98d5c',capB:'#4f7fb6',black:'#1d1e21',chip:'#1f2023',rubber:'#2a2b2f',beige:'#efdcc0',sock:'#5d7088'};
+function roundRect(x0,y0,x1,y1,r,n=5){const o=[];const c=[[x1-r,y0+r,-90],[x1-r,y1-r,0],[x0+r,y1-r,90],[x0+r,y0+r,180]];
+  for(const [cx,cy,a0] of c) for(let i=0;i<=n;i++){const a=(a0+90*i/n)*Math.PI/180;o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);} return o;}
+const BT=1.0;
+// extrusion of an XZ profile along y (for the moulded T body)
+function extrudeY(prof,y0,y1,color,o={}){
+  let A=0; for(let i=0;i<prof.length;i++){const p=prof[i],q=prof[(i+1)%prof.length]; A+=p[0]*q[1]-q[0]*p[1];}
+  const faces=[];
+  for(let i=0;i<prof.length;i++){ const a=prof[i],b=prof[(i+1)%prof.length];
+    let nx=b[1]-a[1], nz=-(b[0]-a[0]); if(A<0){nx=-nx;nz=-nz;} const L=Math.hypot(nx,nz)||1; nx/=L; nz/=L;
+    if(nx+nz<=0.001) continue;
+    const k=Math.min(1.25,0.62+0.45*Math.max(nz,0)+0.05*nx);
+    faces.push({d:(a[0]+b[0]+a[1]+b[1])/2,s:`<polygon points="${pts([P(a[0],y0,a[1]),P(b[0],y0,b[1]),P(b[0],y1,b[1]),P(a[0],y1,a[1])])}" fill="${shade(color,k)}" stroke="${shade(color,k)}" stroke-width=".6"/>`}); }
+  faces.sort((p,q)=>p.d-q.d);
+  return `<g>${faces.map(f=>f.s).join('')}<polygon points="${pts(prof.map(([x,z])=>P(x,y1,z)))}" fill="${shade(color,0.82)}" stroke="rgba(0,0,0,.35)" stroke-width=".7"/></g>`;
+}
+function rodX(x0,x1,y,z,r,color){ const a=P(x0,y,z),b=P(x1,y,z), w=(2*r*S*1.05).toFixed(1);
+  return `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#151518" stroke-width="${(+w+1.6).toFixed(1)}" stroke-linecap="round"/>`+
+    `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`+
+    `<line x1="${a[0].toFixed(1)}" y1="${(a[1]-r*S*0.45).toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${(b[1]-r*S*0.45).toFixed(1)}" stroke="rgba(255,255,255,.16)" stroke-width="${(r*S*0.45).toFixed(1)}" stroke-linecap="round"/>`; }
+function vcyl(x,y,z0,z1,r,color){ // vertical cylinder with a soft highlight
+  const [X,Y1]=P(x,y,z1),[,Y0]=P(x,y,z0), rx=1.2247*r*S;
+  return cyl(x,y,z0,z1,r,color)+`<line x1="${(X-rx*0.45).toFixed(1)}" y1="${(Y1+2).toFixed(1)}" x2="${(X-rx*0.45).toFixed(1)}" y2="${(Y0-1).toFixed(1)}" stroke="rgba(255,255,255,.14)" stroke-width="${(rx*0.35).toFixed(1)}"/>`; }
+function passive(x,y,rot,col){ const L=1.0,W=0.5,h=0.4;
+  let s=box(x,y,L,W,0,h,col,rot,{sw:.3}); const r=rot*Math.PI/180;
+  for(const sg of [-1,1]) s+=box(x+Math.cos(r)*sg*0.4,y+Math.sin(r)*sg*0.4,0.2,0.52,0,0.42,COL.silver,rot,{sw:.3});
+  return s; }
+function padsRect(cx,cy,w,d,rot=0,fill=COL.tin){ return flat(rectPoly(cx,cy,w,d,rot),0.001,fill,{stroke:'#8d9093',sw:.4}); }
+// chip with gull-wing (QFP) or bottom pads (QFN)
+function chip(cx,cy,size,h,n,kind,o={}){
+  const half=size/2, pitch=(size-1.2)/(n-1); let back='',front='';
+  for(let i=0;i<n;i++){ const t=-half+0.6+i*pitch;
+    if(kind==='qfp'){ const L=0.9,w=0.22;
+      back+=box(cx+t,cy-half-L/2,w,L,0,0.25,COL.silver,0,{sw:.25})+box(cx-half-L/2,cy+t,L,w,0,0.25,COL.silver,0,{sw:.25});
+      front+=box(cx+t,cy+half+L/2,w,L,0,0.25,COL.silver,0,{sw:.25})+box(cx+half+L/2,cy+t,L,w,0,0.25,COL.silver,0,{sw:.25});
+    } else {
+      front+=box(cx+t,cy+half-0.1,0.24,0.22,0,0.18,COL.silver,0,{stroke:false})+box(cx+half-0.1,cy+t,0.22,0.24,0,0.18,COL.silver,0,{stroke:false});
+    } }
+  let s=back+box(cx,cy,size,size,kind==='qfp'?0.1:0,h,COL.chip,0,{top:o.top||'#25262a'})+front;
+  s+=ell(cx-half+0.8,cy-half+0.8,h+.001,.22,'#55585d');
+  if(o.text) s+=isoText(o.text,cx,cy,h+.001,o.ts||0.55,'#5c5f64',0,{w:600});
+  return s; }
+function chipPads(cx,cy,size,n,kind){ let s=''; const half=size/2, pitch=(size-1.2)/(n-1), off=kind==='qfp'?0.75:0.15, L=kind==='qfp'?1.1:0.6;
+  for(let i=0;i<n;i++){ const t=-half+0.6+i*pitch;
+    s+=padsRect(cx+t,cy-half-off+ (kind==='qfp'?0:0.3),0.26,L)+padsRect(cx+t,cy+half+off-(kind==='qfp'?0:0.3),0.26,L)+padsRect(cx-half-off+(kind==='qfp'?0:0.3),cy+t,L,0.26)+padsRect(cx+half+off-(kind==='qfp'?0:0.3),cy+t,L,0.26); }
+  if(kind!=='qfp') s+=flat(rectPoly(cx,cy,size*0.55,size*0.55),0.002,'#8a8d90',{stroke:'#6c6f73',sw:.4});
+  return s; }
+function boardBase(x0,y0,x1,y1,seed,keep){
+  const poly=roundRect(x0,y0,x1,y1,0.7);
+  let s=`<g filter="url(#soft)" opacity=".35">${flat(poly.map(([x,y])=>[x+0.8,y+0.8]),-BT-1.2,'#000')}</g>`;
+  s+=prism(poly,-BT,0,COL.pcb,{top:'url(#pcbTop)',side:'#3a3322',stroke:'rgba(0,0,0,.6)'});
+  const rnd=seeded(seed);
+  // traces
+  for(let i=0;i<7;i++){ const ax=x0+1+rnd()*(x1-x0-2), ay=y0+1+rnd()*(y1-y0-2), bx=ax+(rnd()-.5)*5, by=ay+(rnd()-.5)*5;
+    s+=`<polyline points="${pts([[ax,ay],[bx,ay],[bx,by]].map(p=>P(Math.min(x1-.6,Math.max(x0+.6,p[0])),Math.min(y1-.6,Math.max(y0+.6,p[1])),0)))}" fill="none" stroke="#25272c" stroke-width="${(0.3*S).toFixed(1)}" stroke-linecap="round"/>`; }
+  // vias
+  for(let i=0;i<10;i++){ const x=x0+0.8+rnd()*(x1-x0-1.6), y=y0+0.8+rnd()*(y1-y0-1.6); if(keep.some(k=>x>k[0]&&x<k[2]&&y>k[1]&&y<k[3])) continue; s+=ell(x,y,0,.22,'#6b5230')+ell(x,y,0,.1,'#0b0b0c'); }
+  // passives
+  const cols=[COL.cap,COL.cap,COL.capB,'#141416',COL.cap];
+  let n=0; for(let i=0;i<60&&n<16;i++){ const x=x0+1+rnd()*(x1-x0-2), y=y0+1+rnd()*(y1-y0-2);
+    if(keep.some(k=>x>k[0]-0.8&&x<k[2]+0.8&&y>k[1]-0.8&&y<k[3]+0.8)) continue; s+=passive(x,y,rnd()<.5?0:90,cols[n%cols.length]); n++; }
+  return s; }
+
+/* ---------- geometry of the set ---------- */
+const B1=[0,0,12,18], B2=[16,-4,27,7], B3=[30,-8,39,2];
+const SOCK1=[10.0,2.6], SOCK2=[25.4,-2.4];
+const PADS1=[1.8,4.6,7.4,10.2];
+function boardSVG(){
+  let s='';
+  s+=boardBase(...B1,11,[[3,8.5,9,14.5],[2.5,2,8.5,8],[8.5,1.2,11.6,4.2],[0.5,15,11.5,17.8]]);
+  // board1 solder pads + silk
+  PADS1.forEach((x,i)=>{ s+=flat(rectPoly(x,16.6,2.2,2.2),0.002,COL.gold,{stroke:COL.goldD,sw:.5})+ell(x,16.6,0.003,.6,'#151515')+ell(x,16.6,0.004,.45,'#e9e9e4','opacity=".15"');
+    s+=isoText(['RX','TX','5V','GND'][i],x,14.6,0,0.8,COL.silk,0,{w:700}); });
+  // board1 crystal
+  s+=box(3.2,15.0-2.6,2.0,1.6,0,0.8,COL.silver,0,{top:'url(#metal)',sw:.4});
+  s+=boardBase(...B2,23,[[19,-1.5,24.5,4.5],[23.8,-4,27,-0.8],[16.2,5.8,27,7]]);
+  for(const [x,y] of [[16.9,6.3],[26.6,6.3],[16.9,-3.3]]) s+=flat(rectPoly(x,y,1.1,1.1),0.002,COL.gold,{stroke:COL.goldD,sw:.4});
+  s+=box(17.6,4.8,1.8,1.4,0,0.7,COL.silver,0,{top:'url(#metal)',sw:.4});
+  s+=boardBase(...B3,37,[[31,-6.6,34.8,-2.4],[35,-7.6,39,-0.4],[30,0.6,39,2]]);
+  // board3 castellated pads on the front (+y) edge
+  for(let i=0;i<4;i++){ const x=31.4+i*2.1;
+    s+=flat(rectPoly(x,1.3,1.3,1.4),0.002,COL.gold,{stroke:COL.goldD,sw:.4})+ell(x,2.0,0.003,.45,'#0f0f10');
+    s+=`<polygon points="${pts([P(x-.6,2,-BT),P(x+.6,2,-BT),P(x+.6,2,0),P(x-.6,2,0)])}" fill="${COL.goldD}"/>`; }
+  // board3 5-pin socket (static, the "5-Pin Connector")
+  s+=box(37.2,-4.0,2.6,6.2,0,0.25,COL.silver,0,{sw:.4});
+  s+=box(37.2,-4.0,2.4,6.0,0.25,2.4,COL.sock,0,{top:'#7286a0',sw:.6});
+  s+=flat(rectPoly(37.0,-4.0,1.5,5.2),2.401,'#2e3846');
+  for(let i=0;i<5;i++) s+=ell(37.0,-5.6+i*0.8,2.402,.14,COL.gold);
+  // U.FL sockets
+  for(const [x,y] of [SOCK1,SOCK2]){ s+=box(x,y,2.6,2.6,0,0.35,COL.gold,0,{sw:.4})+vcyl(x,y,0.35,0.95,0.9,'#e2bb63')+ell(x,y,0.951,.35,'#7a5a22'); }
+  return s; }
+
+/* ---------- COMPONENTS ---------- */
+const PARTS=[]; const addPart=o=>PARTS.push(o);
+// antennas + coax + U.FL plugs (vertical chain)
+function chain(id,sx,sy,L,dPlug,dCable,dAnt,delay,rodL,rodOff){
+  const zPlug0=0.95, zPlug1=2.0, zc0=zPlug1, zc1=zc0+L, zr=zc1+3.4+1.6;
+  addPart({id:'plug'+id,group:'ufl',label:'IPEX/U.FL Connector',side:'L',x:sx,y:sy,disp:[0,0,dPlug],delay:delay+0.12,topZ:3.0,foot:rectPoly(sx,sy,2.6,2.6),
+    pads:()=>'', draw:()=>box(sx,sy,2.7,2.7,zPlug0,zPlug0+0.45,'#d9b35d',0,{sw:.4})+vcyl(sx,sy,zPlug0+0.45,zPlug1,1.0,'#e7c26c')+box(sx+1.5,sy,0.9,1.4,zPlug0,zPlug0+0.55,'#cfa955',0,{sw:.4})});
+  addPart({id:'coax'+id,group:'coax',label:'Coaxial Cable',side:'L',x:sx,y:sy,disp:[0,0,dCable],delay:delay+0.06,topZ:2*(zc0+L*0.42),foot:rectPoly(sx,sy,1.2,1.2),
+    pads:()=>'', draw:()=>vcyl(sx,sy,zc0,zc0+1.4,0.75,'#b99a55')+vcyl(sx,sy,zc0+1.4,zc1,0.55,'#232427')});
+  addPart({id:'ant'+id,group:'ant',label:'T-Style Dipole Antenna Element',side:'R',x:sx,y:sy,disp:[0,0,dAnt],delay:delay,topZ:2*(zr+0.6),foot:rectPoly(sx,sy,2,2),
+    pads:()=>'', draw:()=>{ const x=sx, y=sy;
+      let s=vcyl(x,y,zc1,zr-3.6,0.85,'#2c2d31');
+      s+=rodX(x-rodL/2+rodOff,x+rodL/2+rodOff,y,zr,0.72,COL.rubber);
+      const prof=[[-7,zr+.2],[-6.5,zr+1.15],[-5.8,zr+1.5],[5.8,zr+1.5],[6.5,zr+1.15],[7,zr+.2],[6.4,zr-.8],[2.6,zr-2.0],[1.3,zr-3.0],[1.0,zr-3.7],[-1.0,zr-3.7],[-1.3,zr-3.0],[-2.6,zr-2.0],[-6.4,zr-.8]].map(([u,z])=>[x+u,z]);
+      s+=extrudeY(prof,y-1.25,y+1.25,COL.rubber);
+      return s; }});
+}
+chain('1',SOCK1[0],SOCK1[1],25,4.2,9.0,15.5,0.00,46,0);
+chain('2',SOCK2[0],SOCK2[1],15,3.6,8.0,12.0,0.05,46,3);
+// chips
+addPart({id:'rf1',label:'Larger RF Transceiver Chip',side:'L',x:5.5,y:5,disp:[0,0,19],delay:0.22,topZ:1.2,foot:rectPoly(5.5,5,5.6,5.6),
+  pads:()=>chipPads(5.5,5,5,10,'qfp'), draw:()=>chip(5.5,5,5,1.2,10,'qfp',{text:'SX1280',ts:.7})});
+addPart({id:'mcu1',label:'Larger MCU Chip',side:'L',x:6.0,y:11.5,disp:[0,0,11],delay:0.28,topZ:1.2,foot:rectPoly(6,11.5,5.6,5.6),
+  pads:()=>chipPads(6,11.5,5,10,'qfp'), draw:()=>chip(6,11.5,5,1.2,10,'qfp',{text:'MCU',ts:.7})});
+addPart({id:'mcu2',label:'Medium MCU/RF Chip',side:'R',x:21.8,y:1.5,disp:[0,0,12.5],delay:0.34,topZ:0.9,foot:rectPoly(21.8,1.5,4.2,4.2),
+  pads:()=>chipPads(21.8,1.5,4,6,'qfn'), draw:()=>chip(21.8,1.5,4,0.9,6,'qfn',{text:'ESP',ts:.6})});
+addPart({id:'mcu3',label:'Smallest MCU/RF Chip',side:'R',x:32.9,y:-4.5,disp:[0,0,11.5],delay:0.40,topZ:0.85,foot:rectPoly(32.9,-4.5,3.2,3.2),
+  pads:()=>chipPads(32.9,-4.5,3,5,'qfn'), draw:()=>chip(32.9,-4.5,3,0.85,5,'qfn')});
+// 5-pin header plug (beige) seated in the socket → moves up
+addPart({id:'hdr',label:'5-Pin Header',side:'R',x:37.0,y:-4.0,disp:[0,0,6.0],delay:0.46,topZ:2*(2.4+0.8),foot:rectPoly(37,-4,1.5,5.2),
+  pads:()=>'', draw:()=>{ let s=box(37.0,-4.0,1.5,5.2,1.2,3.6,COL.beige,0,{top:'#f4e7d1',sw:.5});
+    for(let i=0;i<5;i++) s+=box(37.0,-5.6+i*0.8,0.3,0.3,3.6,4.2,COL.gold,0,{sw:.25});
+    s+=box(37.85,-4.0,0.3,4.4,2.0,3.4,'#e6d2b2',0,{sw:.3}); return s; }});
+
+/* ---------- labels ---------- */
+const EXTRA=[
+  {id:'pads',label:'Solder Pads',side:'L',pt:()=>P(4.6,16.6,0),from:0.45},
+  {id:'pcb',label:'PCB Board',side:'R',pt:()=>P(39,-1.0,-0.5),from:0.5},
+  {id:'sock',label:'5-Pin Connector',side:'R',pt:()=>P(38.4,-2.0,1.3),from:0.55},
+];
+const LX=640;
+function partOffset(pt,k){ const [dx,dy,dz]=pt.disp; return [(dx*k - dy*k)*C*S, (dx*k + dy*k)*H*S - dz*k*S]; }
+function anchorOf(pt,k){ const [ox,oy]=partOffset(pt,k); const [X,Y]=P(pt.x,pt.y,pt.topZ*0.5); return [X+ox,Y+oy]; }
+const LABELS=[];
+(function(){
+  const groups={};
+  for(const p of PARTS){ const key=p.group||p.id; (groups[key]=groups[key]||[]).push(p); }
+  for(const key in groups){ const g=groups[key]; LABELS.push({id:key,label:g[0].label,side:g[0].side,parts:g}); }
+  for(const e of EXTRA) LABELS.push({id:e.id,label:e.label,side:e.side,extra:e});
+  for(const side of ['L','R']){
+    const L=LABELS.filter(l=>l.side===side);
+    for(const l of L){ const a=l.parts? l.parts.map(p=>anchorOf(p,1)) : [l.extra.pt()]; l.want=a.reduce((s,v)=>s+v[1],0)/a.length; }
+    L.sort((a,b)=>a.want-b.want);
+    let y=-1e9; for(const l of L){ y=Math.max(l.want,y+60); l.y=y; }
+  }
+})();
+/* ---------- timeline ---------- */
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const SPAN=0.52;
+const local=(p,part)=>ease(clamp((p-part.delay)/SPAN));
+
+/* ---------- render ---------- */
+const DEFS=`<defs>
+<linearGradient id="pcbTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#232429"/><stop offset=".55" stop-color="#18191c"/><stop offset="1" stop-color="#121315"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset=".5" stop-color="#c3c6ca"/><stop offset="1" stop-color="#e2e4e7"/></linearGradient>
+<linearGradient id="usbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f2f4"/><stop offset=".45" stop-color="#b9bcc1"/><stop offset=".7" stop-color="#d6d8dc"/><stop offset="1" stop-color="#8b8f95"/></linearGradient>
+<linearGradient id="usbTop" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe1e4"/><stop offset=".5" stop-color="#f7f8f9"/><stop offset="1" stop-color="#c9ccd0"/></linearGradient>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="softS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>`;
+const BOARD_SVG=boardSVG();
+const PADS_SVG=PARTS.map(p=>p.pads()).join('');
+for(const p of PARTS){ p.svg=p.draw(); p.foot=p.foot||rectFoot(p); }
+function rectFoot(p){ // shadow footprint polygon (world) approximated by its pads bbox
+  const sizes={ant:[6.9,1.8],mcu:[5,5],xtal:[3.3,2.6],rst:[4.4,2.7],boot:[4.4,2.7],reg:[2.6,2.9],usb:[8.9,7.4]};
+  const [w,d]=sizes[p.id]||[1.6,0.8]; return rectPoly(p.x,p.y,w,d,p.id==='mcu'?45:0);
+}
+function render(p,opt={}){
+  const hov=opt.hover||null, showLabels=opt.labels!==false;
+  let out=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1150 -1180 2300 1500" font-family="Inter,Segoe UI,Arial,sans-serif">${DEFS}`;
+  out+=`<g>${BOARD_SVG}${PADS_SVG}</g>`;
+  // shadows on board
+  out+='<g>';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.001) continue;
+    const op=0.42*(1-0.75*k); const [ox,oy]=partOffset(pt,k);
+    out+=`<g transform="translate(${(ox*0.18).toFixed(1)},${(oy*0).toFixed(1)})" filter="url(#softS)" opacity="${op.toFixed(3)}">${flat(pt.foot,0.01,'#000')}</g>`; }
+  out+='</g>';
+  // guides
+  out+='<g fill="none" stroke="#5f6368" stroke-width="1.3" stroke-dasharray="6 5">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01) continue;
+    const [ax,ay]=P(pt.x,pt.y,0), [ox,oy]=partOffset(pt,k);
+    out+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(ax+ox).toFixed(1)}" y2="${(ay+oy).toFixed(1)}" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g><g fill="#5f6368">';
+  for(const pt of PARTS){ const k=local(p,pt); if(k<=0.01) continue; const [ax,ay]=P(pt.x,pt.y,0);
+    out+=`<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="2.6" opacity="${clamp(k*5).toFixed(2)}"/>`; }
+  out+='</g>';
+  // parts, painter's order by depth
+  const order=PARTS.map(pt=>{const k=local(p,pt);return {pt,k,depth:pt.x+pt.y+(pt.disp[0]+pt.disp[1])*k+pt.disp[2]*k*1.0};}).sort((a,b)=>a.depth-b.depth);
+  for(const {pt,k} of order){ const [ox,oy]=partOffset(pt,k); const key=pt.group||pt.id;
+    out+=`<g class="part${hov===key?' hl':''}" data-id="${key}" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})">${pt.svg}</g>`; }
+  // labels
+  if(showLabels){
+    out+='<g>';
+    for(const l of LABELS){
+      let a, anchors;
+      if(l.parts){ a=Math.max(...l.parts.map(pt=>local(p,pt))); anchors=l.parts.map(pt=>anchorOf(pt,local(p,pt))); a=clamp((a-0.5)/0.35); }
+      else { a=clamp((p-l.extra.from)/0.25); anchors=[l.extra.pt()]; }
+      if(a<=0.001) continue;
+      const left=l.side==='L', tx=left?-LX:LX, ex=left?-LX+12:LX-12, elbow=left?-LX+70:LX-70;
+      const col=hov===l.id?'#0a84ff':'#25282c';
+      let lines='';
+      for(const [x,y] of anchors){
+        const mx=elbow, my=l.y;
+        lines+=`<path d="M${ex},${l.y.toFixed(1)} L${mx},${my.toFixed(1)} L${x.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${col}" stroke-width="1.4"/>`+
+               `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/>`;
+      }
+      const dash = `stroke-dasharray="${(900*a).toFixed(0)} 2000"`;
+      out+=`<g class="lbl${hov===l.id?' hl':''}" data-id="${l.id}" opacity="${a.toFixed(3)}">`+
+        `<g ${dash}>${lines}</g>`+
+        `<text x="${tx}" y="${(l.y).toFixed(1)}" text-anchor="${left?'end':'start'}" dominant-baseline="central" font-size="24" font-weight="650" letter-spacing=".6" fill="${col}" transform="translate(${((1-a)*(left?-14:14)).toFixed(1)},0)">${l.label.toUpperCase()}</text>`+
+        `<rect x="${left?tx-430:tx-10}" y="${l.y-20}" width="440" height="40" fill="transparent"/></g>`;
+    }
+    out+='</g>';
+  }
+  return out+'</svg>';
+}
+// </core>
+
+/* ================= DOM / interaction ================= */
+if(typeof document!=='undefined'){
+  const stage=document.getElementById('stage'), scrub=document.getElementById('scrub'), pct=document.getElementById('pct'),
+        playBtn=document.getElementById('play'), loopEl=document.getElementById('loop'), labelsEl=document.getElementById('labels'),
+        speedEl=document.getElementById('speed');
+  const ICON_PLAY='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>';
+  const ICON_PAUSE='<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg>';
+  // cycle: explode 5.2s · hold 1.8s · assemble 3.6s · hold 1.2s
+  const T1=5.2,H1=1.8,T2=3.6,H2=1.2,CYCLE=T1+H1+T2+H2;
+  let t=0, playing=true, hover=null, last=performance.now(), p=0, tween=null, dirty=true;
+  function pFromT(tt){ tt=((tt%CYCLE)+CYCLE)%CYCLE;
+    if(tt<T1) return tt/T1; if(tt<T1+H1) return 1; if(tt<T1+H1+T2) return 1-(tt-T1-H1)/T2; return 0; }
+  function tFromP(pp,forward=true){ return forward? pp*T1 : T1+H1+(1-pp)*T2; }
+  function setPlaying(v){ playing=v; playBtn.innerHTML=v?ICON_PAUSE:ICON_PLAY; }
+  function draw(){ stage.innerHTML=render(p,{hover,labels:labelsEl.checked}); scrub.value=Math.round(p*1000); pct.textContent=Math.round(p*100)+'%'; dirty=false; }
+  function frame(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    if(tween){ tween.e+=dt; const k=ease(clamp(tween.e/tween.d)); p=tween.a+(tween.b-tween.a)*k; dirty=true;
+      if(tween.e>=tween.d){ t=tFromP(p,tween.b>tween.a); tween=null; } }
+    else if(playing){
+      t+=dt*parseFloat(speedEl.value);
+      if(!loopEl.checked && t>=T1){ t=T1; setPlaying(false); }
+      const np=pFromT(t); if(np!==p){p=np;dirty=true;}
+    }
+    if(dirty) draw();
+    requestAnimationFrame(frame);
+  }
+  playBtn.onclick=()=>{ if(!playing && !loopEl.checked && p>=1){ t=0; } setPlaying(!playing); };
+  scrub.addEventListener('input',()=>{ setPlaying(false); tween=null; p=scrub.value/1000; t=tFromP(p); dirty=true; });
+  document.getElementById('toA').onclick=()=>{ setPlaying(false); tween={a:p,b:0,d:Math.max(.4,1.4*p),e:0}; };
+  document.getElementById('toB').onclick=()=>{ setPlaying(false); tween={a:p,b:1,d:Math.max(.4,2.2*(1-p)),e:0}; };
+  labelsEl.onchange=()=>{dirty=true;};
+  stage.addEventListener('mouseover',e=>{ const g=e.target.closest('[data-id]'); const id=g?g.dataset.id:null; if(id!==hover){hover=id;dirty=true;} });
+  stage.addEventListener('mouseleave',()=>{hover=null;dirty=true;});
+  document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); playBtn.click(); }
+    if(e.code==='ArrowRight'){ setPlaying(false); p=clamp(p+0.02); t=tFromP(p); dirty=true; }
+    if(e.code==='ArrowLeft'){ setPlaying(false); p=clamp(p-0.02); t=tFromP(p); dirty=true; } });
+  setPlaying(true); draw(); requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>

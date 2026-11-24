@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env.local
+.env.*.local
+
+# Arquivos de trabalho locais (capturas brutas, relatórios de inspeção)
+.shots/
+.taste-skill/inspect/
+*.log
+
+# Firebase local
+.firebase/
+*-debug.log
+
+# Material local de trabalho (não publicar)
+backup/
+.taste-skill/
+.impeccable/
