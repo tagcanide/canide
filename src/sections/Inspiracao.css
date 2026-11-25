@@ -452,8 +452,9 @@
   display: grid;
   gap: var(--s-3);
   justify-self: start;
-  padding: var(--s-6) var(--s-6) var(--s-6) var(--s-5);
-  border-left: 6px solid var(--azul);
+  padding-block: var(--s-5);
+  border-top: 1px solid var(--azul);
+  border-bottom: 1px solid var(--linha-forte);
 }
 .livro__rotulo {
   font-size: 0.75rem;
