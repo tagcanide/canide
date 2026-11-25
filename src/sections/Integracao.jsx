@@ -4,9 +4,9 @@ import './Integracao.css';
 
 // Caminho de uma leitura, conferido no firmware e no gateway (protocolo V3).
 const ETAPAS = [
-  { nome: 'Tag', detalhe: 'ESP32 · GPS NEO-6M · BME280', texto: 'Lê posição, altitude, satélites, temperatura, pressão e umidade.' },
-  { nome: 'Rádio', detalhe: 'ESP-NOW · pacote V3 de 84 bytes', texto: 'Cada leitura viaja sem fio até o receptor.' },
-  { nome: 'Receptor', detalhe: 'ESP32 RX · porta USB', texto: 'Entrega os pacotes ao computador pela porta serial.' },
+  { nome: 'Tag', detalhe: 'ESP32-C3 · GPS NEO-6M · BME280', texto: 'Lê posição, altitude, satélites, temperatura, pressão e umidade e monta o pacote.' },
+  { nome: 'Rádio', detalhe: 'Módulos RF · ESP-NOW · pacote V3 de 84 bytes', texto: 'Cada leitura viaja sem fio até o receptor.' },
+  { nome: 'Receptor', detalhe: 'NodeMCU V3 · porta USB', texto: 'Entrega os pacotes ao computador pela porta serial.' },
   { nome: 'Gateway', detalhe: 'CSV local · InfluxDB 2.x', texto: 'Grava cada amostra com o identificador da sessão.' },
   { nome: 'Painel', detalhe: 'Navegador · 127.0.0.1', texto: 'Mostra o tempo real, o histórico e a qualidade dos dados.' }
 ];

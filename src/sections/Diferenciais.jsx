@@ -10,7 +10,7 @@ const REGRAS = [
 ];
 
 const FEITO = [
-  'Recepção pelo ESP32 RX via USB e modo de simulação, com troca de fonte sem reiniciar',
+  'Recepção pelo NodeMCU V3 via USB e modo de simulação, com troca de fonte sem reiniciar',
   'Gráficos do BME280 e do GPS, com trajetória local em metros',
   'Gravação automática em CSV e no InfluxDB 2.x, com identificador de sessão',
   'Auditoria de qualidade dos registros brutos e saúde do gateway ao vivo'

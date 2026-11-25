@@ -1,12 +1,13 @@
 // Dados das placas sem geometria: nomes, medidas e rótulos (português, a partir dos rótulos dos originais).
 // Fica fora do pacote do Three.js para a interface aparecer antes do 3D.
-// Descrições físicas tiradas do próprio modelo. `funcao` só existe onde o papel da placa no CANIDÉ está
-// confirmado (tag: GPS NEO-6M e BME280, conferidos no gateway); nas demais ainda não foi informado.
+// Descrições físicas tiradas do próprio modelo. `funcao` traz o papel da placa no CANIDÉ, informado pela equipe
+// em 2026-11-24 (TX, receptor, rádio, GPS e sensor ambiental); placa sem papel confirmado fica sem o campo.
 export const INFO = {
   'esp32-c3': {
     id: 'esp32-c3',
     nome: 'ESP32-C3 Super Mini',
     medidas: '18 × 23,4 mm',
+    funcao: 'Transmissor (TX) da tag. Recebe as leituras do GPS e do BME280, monta o pacote e o transmite por rádio ao receptor.',
     arquivo: 'esp32-c3-exploded.html',
     rotulos: {
       ant: { nome: 'Antena cerâmica', texto: 'Bloco vermelho de 4,9 × 1,7 mm com dois terminais metálicos, na borda superior da placa.' },
@@ -27,6 +28,7 @@ export const INFO = {
     id: 'nodemcu-v3',
     nome: 'NodeMCU V3',
     medidas: '31 × 58 mm',
+    funcao: 'Receptor (RX) da central. Recebe os pacotes da tag pelo rádio e os entrega ao computador, onde o gateway grava cada amostra no banco de dados.',
     arquivo: 'nodemcu-v3-exploded.html',
     rotulos: {
       mod: { nome: 'Módulo Wi-Fi ESP-12', texto: 'Módulo de 16 × 24 mm com blindagem metálica marcada ESP8266MOD e antena impressa em zigue-zague.' },
@@ -47,7 +49,7 @@ export const INFO = {
     nome: 'GY-NEO6MV2 GPS',
     medidas: '25 × 35 mm',
     arquivo: 'gy-neo6mv2-exploded.html',
-    funcao: 'Receptor GPS da tag (NEO-6M). Fornece fix, satélites, latitude, longitude e altitude GPS, os dados do Plano de voo local.',
+    funcao: 'Receptor GPS da tag (NEO-6M). Entrega os dados cartográficos de posição: latitude, longitude, altitude GPS, satélites e fix.',
     rotulos: {
       ant: { nome: 'Antena cerâmica de patch', texto: 'Bloco amarelo de 24 × 24 mm sobre base verde, ligado à placa por cabo; fica ao lado da placa quando montada.' },
       coax: { nome: 'Cabo coaxial com plugue U.FL/IPEX', texto: 'Cabo fino que leva o sinal da antena até o soquete da placa.' },
@@ -68,7 +70,7 @@ export const INFO = {
     nome: 'BME/BMP280',
     medidas: '11,5 × 15 mm',
     arquivo: 'bme-bmp280-exploded.html',
-    funcao: 'Sensor ambiental da tag (BME280). Mede temperatura, pressão e umidade relativa; a altitude barométrica sai da pressão. São os dados da tela Atmosfera.',
+    funcao: 'Sensor ambiental da tag (BME280). Entrega temperatura, umidade relativa e altitude relativa, calculada a partir da pressão.',
     rotulos: {
       sen: { nome: 'Sensor BME/BMP280', texto: 'Encapsulamento LGA de 2,5 × 2,5 mm com tampa metálica e um furo de respiro para o ar.' },
       smd: { nome: 'Capacitores e resistores SMD', texto: 'Quatro componentes de montagem em superfície em volta do sensor.' }
@@ -99,6 +101,7 @@ export const INFO = {
   'modulos-rf': {
     id: 'modulos-rf',
     nome: 'Módulos RF',
+    funcao: 'Rádio do enlace entre a tag e o receptor. Antenas, cabos e transceptores levam os pacotes sem fio.',
     medidas: 'três placas: 12 × 18, 11 × 11 e 9 × 10 mm',
     arquivo: 'rf-modules-exploded.html',
     rotulos: {

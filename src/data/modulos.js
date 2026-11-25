@@ -18,7 +18,8 @@ export const PAINEL = [
     resumo: 'Sessão, protocolo e estado de cada parte, ao vivo.',
     texto: 'Sessão, fluxo, protocolo e o estado de cada parte: gateway, fonte, pacotes, sensores, CSV e banco. Os gráficos usam uma janela de 60, 120 ou 240 amostras.',
     img: 'painel-visao-geral', w: 1440, h: 1450,
-    alt: 'Tela Tempo real do painel CANIDÉ com cartões de sessão e protocolo e o estado do sistema.'
+    alt: 'Tela Tempo real do painel CANIDÉ com cartões de sessão e protocolo e o estado do sistema.',
+    origem: ['esp32-c3', 'modulos-rf', 'nodemcu-v3']
   },
   {
     id: 'plano-de-voo',
