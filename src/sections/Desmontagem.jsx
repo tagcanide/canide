@@ -200,7 +200,7 @@ export default function Desmontagem() {
     <section id="desmontagem" ref={secaoRef} className="desmontagem" aria-labelledby="desmontagem-titulo" data-placa={placa}>
       <div className="moldura desmontagem__cabeca" data-grupo>
         <p className="rotulo" data-entra>
-          <span className="rotulo__num">03</span> O produto · por dentro
+          <span className="rotulo__num">04</span> O produto · por dentro
         </p>
         <h2 id="desmontagem-titulo" className="titulo" data-titulo>
           Peça por peça.

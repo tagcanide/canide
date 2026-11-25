@@ -1,0 +1,70 @@
+/* Referências: duas colunas de lista numerada, texto pequeno e links discretos. */
+
+.refs {
+  display: grid;
+  gap: var(--s-7);
+}
+.refs__cabeca {
+  display: grid;
+  gap: var(--s-4);
+}
+.refs__intro {
+  max-width: 70ch;
+  color: var(--tinta-suave);
+}
+.refs__colunas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-7) var(--gutter);
+}
+.refs__grupo {
+  padding-bottom: var(--s-3);
+  margin-bottom: var(--s-2);
+  border-bottom: 1px solid var(--linha-forte);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.refs__lista {
+  counter-reset: ref;
+}
+.refs__lista li {
+  counter-increment: ref;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--linha);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--tinta-suave);
+}
+.refs__lista li::before {
+  content: counter(ref, decimal-leading-zero);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--azul-texto);
+  padding-top: 0.15em;
+}
+.refs__lista li > * {
+  grid-column: 2;
+}
+.refs__lista li > span:first-child {
+  overflow-wrap: anywhere;
+}
+.refs__link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  font-weight: 700;
+  color: var(--azul-texto);
+  text-decoration-color: var(--linha-forte);
+}
+@media (max-width: 899px) {
+  .refs__colunas {
+    grid-template-columns: 1fr;
+  }
+}

@@ -61,13 +61,21 @@ const CAPITULOS = [
   { id: 'abertura', nome: 'Abertura', descricao: 'A marca desenhada pela arara-canindé.', sel: '#inicio' },
   { id: 'identidade', nome: 'Identidade', descricao: 'O símbolo e o que cada traço representa.', sel: '#identidade' },
   { id: 'proposito', nome: 'Propósito', descricao: 'Por que acompanhar animais reintroduzidos.', sel: '#proposito' },
+  { id: 'pesquisa', nome: 'A pesquisa', descricao: 'Pergunta, hipótese, objetivos e método do projeto.', sel: '#pesquisa' },
   { id: 'produto', nome: 'O produto', descricao: 'Tag, receptor, gateway e painel.', sel: '#produto' },
   { id: 'sessao', nome: 'Sessão real', descricao: 'Dados gravados num teste do protótipo.', sel: '#sessao' },
   { id: 'integracao', nome: 'Integração', descricao: 'O caminho de uma leitura, do sensor à tela.', sel: '#integracao' },
-  { id: 'diferenciais', nome: 'Diferenciais', descricao: 'O que distingue o sistema e em que pé está.', sel: '#diferenciais' },
   { id: 'inspiracao', nome: 'Nossa inspiração', descricao: 'Gladys Mae West e a matemática da forma da Terra.', sel: '#inspiracao' },
+  { id: 'matematica', nome: 'Matemática do GPS', descricao: 'Tempo, distância e geometria: como o GPS localiza.', sel: '#matematica' },
+  { id: 'laboratorio', nome: 'Laboratório do GPS', descricao: 'Simulação 3D, do sinal à coordenada.', sel: '#mat-laboratorio' },
+  { id: 'telemetria', nome: 'Da matemática à telemetria', descricao: 'Quem calcula o quê, do satélite à tela.', sel: '#telemetria' },
+  { id: 'diferenciais', nome: 'Diferenciais', descricao: 'O que distingue o sistema e em que pé está.', sel: '#diferenciais' },
+  { id: 'referencias', nome: 'Referências', descricao: 'Fontes da pesquisa e da matemática do GPS.', sel: '#referencias' },
   { id: 'contato', nome: 'Conhecer', descricao: 'Contato e próximos passos.', sel: '#contato' }
 ];
+
+// Capítulos até "O produto" vêm antes das placas e das telas do painel, na ordem da página.
+const ANTES_DAS_PLACAS = CAPITULOS.findIndex(c => c.id === 'produto') + 1;
 
 /** Painéis que usam os dados de cada placa (inverso de PAINEL[].origem). */
 export const telasDaPlaca = id => PAINEL.filter(p => p.origem?.includes(id));
@@ -77,7 +85,7 @@ export const telasDaPlaca = id => PAINEL.filter(p => p.origem?.includes(id));
  * { id, grupo, nome, descricao, alvo: { tipo: 'secao' | 'painel' | 'placa', sel?, placa? } }
  */
 export const MODULOS = [
-  ...CAPITULOS.slice(0, 4).map(c => ({ id: c.id, grupo: 'capitulo', nome: c.nome, descricao: c.descricao, alvo: { tipo: 'secao', sel: c.sel } })),
+  ...CAPITULOS.slice(0, ANTES_DAS_PLACAS).map(c => ({ id: c.id, grupo: 'capitulo', nome: c.nome, descricao: c.descricao, alvo: { tipo: 'secao', sel: c.sel } })),
   ...ORDEM.map(id => ({
     id: `placa-${id}`,
     grupo: 'placa',
@@ -86,7 +94,7 @@ export const MODULOS = [
     alvo: { tipo: 'placa', placa: id }
   })),
   ...PAINEL.map(p => ({ id: `painel-${p.id}`, grupo: 'painel', nome: p.titulo, descricao: p.resumo, alvo: { tipo: 'painel', sel: `#modulo-${p.id}` } })),
-  ...CAPITULOS.slice(4).map(c => ({ id: c.id, grupo: 'capitulo', nome: c.nome, descricao: c.descricao, alvo: { tipo: 'secao', sel: c.sel } }))
+  ...CAPITULOS.slice(ANTES_DAS_PLACAS).map(c => ({ id: c.id, grupo: 'capitulo', nome: c.nome, descricao: c.descricao, alvo: { tipo: 'secao', sel: c.sel } }))
 ];
 
 export const MODULO = Object.fromEntries(MODULOS.map(m => [m.id, m]));

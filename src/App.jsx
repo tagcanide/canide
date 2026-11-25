@@ -9,6 +9,10 @@ import Sessao from './sections/Sessao.jsx';
 import Integracao from './sections/Integracao.jsx';
 import Diferenciais from './sections/Diferenciais.jsx';
 import Inspiracao from './sections/Inspiracao.jsx';
+import Pesquisa from './sections/Pesquisa.jsx';
+import Matematica from './sections/Matematica.jsx';
+import Telemetria from './sections/Telemetria.jsx';
+import Referencias from './sections/Referencias.jsx';
 import Final from './sections/Final.jsx';
 import Rodape from './sections/Rodape.jsx';
 
@@ -23,13 +27,17 @@ export default function App() {
         <Hero />
         <Identidade />
         <Apresentacao />
+        <Pesquisa />
         <Produto />
         <Desmontagem />
         <Funcionalidades />
         <Sessao />
         <Integracao />
-        <Diferenciais />
         <Inspiracao />
+        <Matematica />
+        <Telemetria />
+        <Diferenciais />
+        <Referencias />
         <Final />
       </main>
       <Rodape />

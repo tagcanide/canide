@@ -12,7 +12,7 @@ export default function Final() {
       <div className="moldura final__grade" data-grupo>
         <div className="final__texto">
           <p className="rotulo" data-entra>
-            <span className="rotulo__num">07</span> Conhecer
+            <span className="rotulo__num">10</span> Conhecer
           </p>
           <h2 id="final-titulo" className="display editorial final__titulo" data-titulo>
             Cabe outro olhar.

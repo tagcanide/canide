@@ -27,9 +27,14 @@ src/bancada/cena.js           cena Three.js: monta, separa as peças, foco, câm
 src/bancada/useBancada.js     hook React: carrega a cena sob demanda, pausa fora da tela, libera WebGL
 src/lib/arara.js              silhueta da arara (corpo vetorizado do kit, cabeça desenhada à mão)
 src/components/Arara.jsx      silhueta em camadas animáveis (traço, máscara, cortes da face, olho)
-src/sections/                 JSX + CSS por seção (Hero, Identidade, Propósito, Produto, Desmontagem,
-                              Funcionalidades, Sessão, Integração, Diferenciais, Nossa inspiração, Conhecer,
-                              Rodapé com o vídeo da logo)
+src/sections/                 JSX + CSS por seção (Hero, Identidade, Propósito, A pesquisa, Produto,
+                              Desmontagem, Funcionalidades, Sessão, Integração, Nossa inspiração,
+                              A matemática que nos localiza, Da matemática à telemetria, Diferenciais,
+                              Referências, Conhecer, Rodapé com o vídeo da logo)
+src/lib/gnss.js               matemática do GPS sem DOM: WGS 84, ECEF, Haversine, Vincenty, rumo,
+                              mínimos quadrados e DOP (cenário demonstrativo, nunca dados reais)
+src/gps/                      laboratório 3D do GPS (cenaGps.js, Three.js sob demanda), DemoGps.jsx e
+                              as peças interativas da seção de matemática
 src/data/session.json         sessão real do receptor, sem latitude, longitude ou altitude GPS
 public/desmontagem/           vistas explodidas em SVG, usadas sem WebGL (geradas dos originais)
 public/brand, fonts, media    kit da marca, fontes e capturas do painel

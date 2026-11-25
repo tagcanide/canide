@@ -45,7 +45,7 @@ export default function Integracao() {
     <section id="integracao" ref={ref} className="integracao secao" aria-labelledby="integracao-titulo">
       <div className="moldura integracao__cabeca" data-grupo>
         <p className="rotulo" data-entra>
-          <span className="rotulo__num">05</span> Integração
+          <span className="rotulo__num">06</span> Integração
         </p>
         <h2 id="integracao-titulo" className="titulo" data-titulo>
           Do sensor à tela, um caminho só.

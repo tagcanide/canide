@@ -6,10 +6,12 @@ import './Nav.css';
 const LINKS = [
   { href: '#identidade', label: 'Identidade' },
   { href: '#proposito', label: 'Propósito' },
+  { href: '#pesquisa', label: 'Pesquisa' },
   { href: '#produto', label: 'Produto' },
   { href: '#funcionalidades', label: 'Funcionalidades' },
   { href: '#integracao', label: 'Integração' },
-  { href: '#inspiracao', label: 'Nossa inspiração' }
+  { href: '#inspiracao', label: 'Nossa inspiração' },
+  { href: '#matematica', label: 'Matemática do GPS' }
 ];
 
 export default function Nav() {

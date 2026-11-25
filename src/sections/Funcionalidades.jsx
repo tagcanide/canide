@@ -16,7 +16,7 @@ export default function Funcionalidades() {
     <section id="funcionalidades" ref={ref} className="funcionalidades secao" aria-labelledby="func-titulo">
       <div className="moldura funcionalidades__cabeca" data-grupo>
         <p className="rotulo" data-entra>
-          <span className="rotulo__num">04</span> Funcionalidades
+          <span className="rotulo__num">05</span> Funcionalidades
         </p>
         <h2 id="func-titulo" className="titulo" data-titulo>
           Uma tela para cada pergunta.

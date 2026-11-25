@@ -1,0 +1,760 @@
+/* A matemática que nos localiza: prancha científica clara. Fórmulas em Noto Serif, réguas finas no azul da marca,
+   cada satélite com uma cor do manual (azul, turquesa, oliva, amarelo) e o ponto calculado em laranja. */
+
+.matematica {
+  --sat-0: var(--azul);
+  --sat-1: var(--turquesa);
+  --sat-2: var(--oliva);
+  --sat-3: var(--amarelo);
+  display: grid;
+  gap: var(--secao);
+}
+
+/* Abertura */
+.mat-abertura {
+  display: grid;
+  gap: var(--s-5);
+}
+.mat-abertura__titulo {
+  max-width: 15ch;
+  color: var(--azul-texto);
+}
+.mat-abertura__sub {
+  max-width: 40ch;
+  color: var(--tinta);
+}
+.mat-abertura__ponte {
+  color: var(--tinta-suave);
+}
+
+.mat-indice {
+  margin-top: var(--s-5);
+  border-top: 1px solid var(--linha-forte);
+}
+.mat-indice ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  column-gap: var(--gutter);
+}
+.mat-indice a {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  min-height: 44px;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--linha);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color var(--dur-rapida) var(--ease-out);
+}
+.mat-indice a span {
+  font-size: 0.75rem;
+  color: var(--azul-texto);
+}
+@media (hover: hover) {
+  .mat-indice a:hover {
+    color: var(--azul-texto);
+  }
+}
+
+/* Partes numeradas */
+.mat-parte {
+  display: grid;
+  gap: var(--s-7);
+}
+.mat-parte__cabeca {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--gutter);
+  align-items: baseline;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha-forte);
+}
+.mat-parte__num {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--azul-texto);
+}
+.mat-parte__num::before {
+  content: '[';
+}
+.mat-parte__num::after {
+  content: ']';
+}
+.mat-parte__cabeca .titulo {
+  max-width: 18ch;
+}
+.mat-parte__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--s-7) var(--gutter);
+  align-items: start;
+}
+.mat-parte__corpo > .texto {
+  display: grid;
+  gap: var(--s-4);
+  padding-left: calc(4.5rem + var(--gutter));
+}
+.mat-parte__lado {
+  display: grid;
+  gap: var(--s-5);
+}
+
+@media (max-width: 999px) {
+  .mat-parte__corpo {
+    grid-template-columns: 1fr;
+  }
+  .mat-parte__corpo > .texto {
+    padding-left: 0;
+  }
+}
+@media (max-width: 599px) {
+  .mat-parte__cabeca {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+}
+
+/* Fórmulas: serifada, grande, sem caixa; o símbolo é a ilustração */
+.formula {
+  font-family: var(--fonte-editorial);
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--azul-texto);
+  font-variant-numeric: lining-nums;
+}
+.formula sub {
+  font-size: 0.5em;
+}
+.formula--larga {
+  font-size: clamp(1.25rem, 3.1vw, 2.75rem);
+  padding-block: var(--s-5);
+  border-block: 1px solid var(--linha);
+  overflow-wrap: anywhere;
+}
+.formula--bloco {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  line-height: 1.7;
+  padding-left: var(--s-5);
+  border-left: 2px solid var(--azul);
+}
+.formula-linha {
+  font-family: var(--fonte-editorial);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.formula-linha--centro {
+  padding-left: var(--s-5);
+}
+
+/* Símbolos e seus significados */
+.simbolos {
+  display: grid;
+  border-top: 1px solid var(--linha);
+}
+.simbolos > div {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.simbolos dt {
+  font-family: var(--fonte-editorial);
+  font-size: 1.125rem;
+  color: var(--azul-texto);
+}
+.simbolos dd {
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+}
+
+/* Calculadoras e peças interativas: superfície em passo de tom, sem sombra */
+.calc {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: var(--papel-2);
+  border-radius: var(--raio-ui);
+}
+.calc__rotulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--t-nota);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.calc__saida {
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--tinta);
+}
+.calc__resultado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+.calc__igual {
+  font-family: var(--fonte-editorial);
+  font-size: 1.125rem;
+}
+.calc__resultado strong {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--azul-texto);
+}
+.calc input[type='range'] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--azul);
+  cursor: pointer;
+}
+.calc__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.chip,
+.alternador button {
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-botao);
+  background: var(--papel);
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition:
+    background-color var(--dur-rapida) var(--ease-out),
+    border-color var(--dur-rapida) var(--ease-out),
+    color var(--dur-rapida) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.chip[aria-pressed='true'],
+.alternador button[aria-pressed='true'] {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--branco);
+}
+@media (hover: hover) {
+  .chip:hover:not([aria-pressed='true']),
+  .alternador button:hover:not([aria-pressed='true']) {
+    border-color: var(--turquesa-texto);
+    color: var(--turquesa-texto);
+  }
+}
+.chip:active,
+.alternador button:active {
+  transform: scale(0.97);
+}
+
+.calc__campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+  align-items: start;
+}
+.campo {
+  display: grid;
+  gap: var(--s-1);
+}
+.campo label {
+  font-size: var(--t-nota);
+  font-weight: 700;
+  color: var(--tinta-suave);
+}
+.campo input {
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--linha-forte);
+  border-radius: 8px;
+  background: var(--papel);
+  font-size: 1rem; /* 16 px: sem zoom automático no iOS */
+  font-variant-numeric: tabular-nums;
+}
+.campo input:focus-visible {
+  outline-color: var(--turquesa);
+}
+.campo input[aria-invalid='true'] {
+  border-color: #b3261e;
+}
+.campo__erro {
+  font-size: var(--t-nota);
+  font-weight: 700;
+  color: #b3261e; /* erro: 6,5:1 sobre o papel */
+}
+.calc__passos {
+  display: grid;
+  gap: var(--s-1);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--linha);
+}
+.calc__passos strong {
+  color: var(--azul-texto);
+}
+.calc__comparacao {
+  margin-top: var(--s-2);
+  font-size: 0.9375rem;
+}
+
+/* Leituras em linhas finas */
+.leituras {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--linha);
+}
+.leituras > div {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.leituras dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--tinta-suave);
+}
+.leituras dd {
+  font-family: var(--fonte-editorial);
+  font-size: 1.375rem;
+  color: var(--tinta);
+}
+
+/* Trilateração no plano */
+.trila svg {
+  width: 100%;
+  overflow: hidden;
+  background: var(--papel-2);
+  border-radius: var(--raio-ui);
+}
+.trila__circulo {
+  fill: none;
+  stroke-width: 1.5;
+  transition: r var(--dur-lenta) var(--ease-out);
+}
+.trila__raio {
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  opacity: 0.6;
+}
+.trila__sat--s0 { stroke: var(--sat-0); fill: var(--sat-0); }
+.trila__sat--s1 { stroke: var(--sat-1); fill: var(--sat-1); }
+.trila__sat--s2 { stroke: var(--sat-2); fill: var(--sat-2); }
+.trila__sat .trila__circulo { fill: none; }
+.trila__receptor {
+  fill: var(--laranja);
+}
+.trila__duvida {
+  fill: rgba(242, 135, 5, 0.12);
+  stroke: var(--laranja);
+  stroke-dasharray: 3 4;
+}
+.alternador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+/* Trajeto demonstrativo */
+.trajeto {
+  width: 100%;
+  background: var(--papel);
+  border-radius: 8px;
+}
+.trajeto__linha {
+  fill: none;
+  stroke: var(--linha-forte);
+  stroke-width: 2;
+}
+.trajeto__ativo {
+  stroke: var(--laranja);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.trajeto__ponto {
+  fill: var(--papel);
+  stroke: var(--azul);
+  stroke-width: 2;
+}
+.trajeto__ponto--feito {
+  fill: var(--azul);
+}
+.trajeto__ponto--inicio {
+  fill: var(--oliva);
+  stroke: var(--oliva);
+}
+.trajeto__norte,
+.trajeto__escala {
+  fill: none;
+  stroke: var(--tinta-suave);
+  stroke-width: 1.5;
+}
+.trajeto__n,
+.trajeto__rotulo {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--tinta-suave);
+}
+
+/* Céu e DOP */
+.dop__grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: center;
+}
+.ceu {
+  width: 100%;
+  max-width: 320px;
+  touch-action: none;
+  user-select: none;
+}
+.ceu__anel {
+  fill: none;
+  stroke: var(--linha-forte);
+}
+.ceu__anel:first-child {
+  fill: var(--papel);
+}
+.ceu__eixo {
+  stroke: var(--linha);
+}
+.ceu__ponto {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--tinta-suave);
+}
+.ceu__sat {
+  cursor: grab;
+  outline: none;
+}
+.ceu__sat circle:not(.ceu__alvo) {
+  fill: var(--azul);
+  transition: fill var(--dur-rapida) var(--ease-out);
+}
+.ceu__alvo {
+  fill: transparent;
+}
+.ceu__sat text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--branco);
+  pointer-events: none;
+}
+.ceu__sat:focus-visible circle:not(.ceu__alvo) {
+  fill: var(--turquesa-texto);
+  stroke: var(--turquesa);
+  stroke-width: 6;
+  stroke-opacity: 0.35;
+}
+.ceu__sat:active {
+  cursor: grabbing;
+}
+.leituras--dop {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 599px) {
+  .dop__grade,
+  .calc__campos {
+    grid-template-columns: 1fr;
+  }
+  .ceu {
+    margin-inline: auto;
+  }
+}
+
+/* Laboratório */
+.mat-lab {
+  display: grid;
+  gap: var(--s-6);
+}
+.mat-lab__cabeca {
+  display: grid;
+  gap: var(--s-4);
+}
+.mat-lab__cabeca .mat-parte__num {
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha-forte);
+}
+.mat-lab__cabeca .titulo {
+  max-width: 16ch;
+}
+
+/* Coordenadas */
+.coordenadas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 1px solid var(--linha-forte);
+}
+.coordenadas__col {
+  display: grid;
+  align-content: start;
+  gap: var(--s-4);
+  padding: var(--s-5) var(--s-5) var(--s-5) 0;
+}
+.coordenadas__col + .coordenadas__col {
+  padding-left: var(--s-5);
+  border-left: 1px solid var(--linha);
+}
+.coordenadas__tipo {
+  font-family: var(--fonte-editorial);
+  font-size: clamp(1.375rem, 2.2vw, 2rem);
+  letter-spacing: -0.02em;
+}
+.coordenadas__exemplo {
+  font-weight: 700;
+  color: var(--azul-texto);
+}
+.coordenadas__nota {
+  margin-top: calc(var(--s-5) * -1);
+  color: var(--tinta-suave);
+}
+@media (max-width: 799px) {
+  .coordenadas {
+    grid-template-columns: 1fr;
+  }
+  .coordenadas__col + .coordenadas__col {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--linha);
+  }
+}
+
+.mat-alturas {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s-7) var(--gutter);
+  align-items: center;
+}
+.mat-alturas .texto {
+  display: grid;
+  gap: var(--s-4);
+}
+@media (max-width: 999px) {
+  .mat-alturas {
+    grid-template-columns: 1fr;
+  }
+}
+.altitudes {
+  width: 100%;
+  overflow: visible;
+}
+.altitudes path {
+  fill: none;
+  stroke-width: 2;
+}
+.altitudes__terreno {
+  stroke: var(--oliva);
+}
+.altitudes__geoide {
+  stroke: var(--turquesa);
+  stroke-dasharray: 6 5;
+}
+.altitudes__elipsoide {
+  stroke: var(--azul);
+}
+.altitudes__ponto {
+  fill: var(--laranja);
+}
+.altitudes .altitudes__cota {
+  stroke: var(--tinta);
+  stroke-width: 1.25;
+}
+.altitudes .altitudes__guia {
+  stroke: var(--tinta-suave);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+.altitudes text {
+  font-family: var(--fonte-editorial);
+  font-size: 22px;
+  font-style: italic;
+  fill: var(--tinta);
+}
+.altitudes .altitudes__nome {
+  font-family: var(--fonte-texto);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  fill: var(--tinta-suave);
+}
+
+/* "No CANIDÉ": a ponte entre a teoria e o que o sistema faz de fato */
+.no-canide {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: var(--s-2) var(--gutter);
+  padding: var(--s-5) 0;
+  border-top: 2px solid var(--azul);
+  max-width: 64rem;
+}
+.no-canide__rotulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.no-canide p:not(.no-canide__rotulo) {
+  max-width: var(--medida);
+}
+@media (max-width: 699px) {
+  .no-canide {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Fontes de erro */
+.mat-qualidade__enunciado {
+  max-width: 44ch;
+}
+.fontes-erro {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--linha-forte);
+}
+.fontes-erro__item {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding: var(--s-5) var(--s-5) var(--s-5) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.fontes-erro__item:not(:nth-child(4n + 1)) {
+  padding-left: var(--s-5);
+  border-left: 1px solid var(--linha);
+}
+.fontes-erro dt {
+  font-weight: 700;
+}
+.fontes-erro dt span {
+  display: block;
+  margin-bottom: var(--s-1);
+  font-size: 0.75rem;
+  color: var(--azul-texto);
+}
+.fontes-erro dd {
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+}
+@media (max-width: 999px) {
+  .fontes-erro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fontes-erro__item:not(:nth-child(4n + 1)) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .fontes-erro__item:nth-child(2n) {
+    padding-left: var(--s-5);
+    border-left: 1px solid var(--linha);
+  }
+}
+@media (max-width: 559px) {
+  .fontes-erro {
+    grid-template-columns: 1fr;
+  }
+  .fontes-erro__item:nth-child(2n) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.mat-dop .texto {
+  display: grid;
+  gap: var(--s-4);
+}
+
+/* Precisão, exatidão, integridade, disponibilidade */
+.conceitos {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--s-6) var(--gutter);
+  align-items: center;
+}
+.conceitos__lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5) var(--gutter);
+}
+.conceitos__lista dt {
+  font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+  letter-spacing: -0.02em;
+}
+.conceitos__lista dd {
+  color: var(--tinta-suave);
+}
+.alvos {
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
+}
+.alvos__anel {
+  fill: none;
+  stroke: var(--linha-forte);
+}
+.alvos__tiro {
+  fill: var(--laranja);
+}
+.alvos text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--tinta-suave);
+}
+@media (max-width: 799px) {
+  .conceitos,
+  .conceitos__lista {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tabelas numéricas (laboratório e WGS 84) */
+.tabela-num {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.tabela-num caption {
+  padding-bottom: var(--s-2);
+  font-size: var(--t-nota);
+  color: var(--tinta-suave);
+  text-align: left;
+}
+.tabela-num th,
+.tabela-num td {
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: 1px solid var(--linha);
+  text-align: right;
+  white-space: nowrap;
+}
+.tabela-num th:first-child {
+  text-align: left;
+}
+.tabela-num thead th {
+  font-size: 0.75rem;
+  color: var(--tinta-suave);
+  border-bottom-color: var(--linha-forte);
+}
+.tabela-num tbody th {
+  font-weight: 700;
+}
+.tabela-num--wgs th {
+  font-weight: 400;
+  white-space: normal;
+}
+.tabela-num--wgs td {
+  font-weight: 700;
+}

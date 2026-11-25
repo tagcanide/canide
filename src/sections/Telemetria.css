@@ -1,0 +1,167 @@
+/* Da matemática à telemetria: um trilho vertical liga as sete etapas; cada linha diz o que a parte faz
+   e onde entra (ou não) a matemática. "Calcula" leva o azul da marca; transporte e armazenamento ficam neutros. */
+
+.telemetria {
+  display: grid;
+  gap: var(--s-8);
+}
+.tele-cabeca {
+  display: grid;
+  gap: var(--s-5);
+}
+.tele-cabeca .titulo {
+  max-width: 14ch;
+}
+.tele-cabeca .enunciado {
+  max-width: 44ch;
+}
+
+.tele-fluxo {
+  --avanco: 0;
+  position: relative;
+  padding-left: var(--s-8);
+}
+.tele-fluxo::before,
+.tele-fluxo::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 7px;
+  width: 2px;
+  background: var(--linha-forte);
+}
+.tele-fluxo::after {
+  background: var(--azul);
+  transform-origin: center top;
+  transform: scaleY(var(--avanco));
+}
+
+.tele-etapa {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr);
+  gap: var(--s-3) var(--gutter);
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--linha);
+}
+.tele-etapa:last-child {
+  border-bottom: 1px solid var(--linha);
+}
+.tele-etapa__no {
+  position: absolute;
+  top: calc(var(--s-5) + 4px);
+  left: calc(var(--s-8) * -1);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--linha-forte);
+  border-radius: 50%;
+  background: var(--papel);
+  transition:
+    border-color var(--dur-media) var(--ease-out),
+    background-color var(--dur-media) var(--ease-out);
+}
+.tele-etapa--ativa .tele-etapa__no {
+  border-color: var(--azul);
+  background: var(--papel);
+}
+.tele-etapa--ativa.tele-etapa--calcula .tele-etapa__no {
+  background: var(--azul);
+}
+
+.tele-etapa__quem {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+.tele-etapa__num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--azul-texto);
+}
+.tele-etapa__nome {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.tele-etapa__onde {
+  font-size: var(--t-nota);
+  font-weight: 700;
+  color: var(--tinta-suave);
+}
+.tele-etapa__faz {
+  color: var(--tinta);
+}
+.tele-etapa__mat {
+  display: grid;
+  align-content: start;
+  gap: var(--s-1);
+  padding-left: var(--s-4);
+  border-left: 2px solid var(--linha);
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+}
+.tele-etapa--calcula .tele-etapa__mat {
+  border-left-color: var(--azul);
+  color: var(--tinta);
+}
+.tele-etapa__tipo {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.tele-etapa--calcula .tele-etapa__tipo {
+  color: var(--azul-texto);
+}
+.tele-etapa--guarda .tele-etapa__tipo {
+  color: var(--oliva);
+}
+.tele-etapa--externo .tele-etapa__tipo {
+  color: var(--turquesa-texto);
+}
+
+@media (max-width: 899px) {
+  .tele-fluxo {
+    padding-left: var(--s-7);
+  }
+  .tele-etapa {
+    grid-template-columns: 1fr;
+  }
+  .tele-etapa__no {
+    left: calc(var(--s-7) * -1);
+  }
+}
+
+/* Responsabilidades: lista de duas colunas com réguas finas */
+.tele-resp {
+  display: grid;
+  gap: var(--s-5);
+}
+.tele-resp__lista {
+  display: grid;
+  border-top: 1px solid var(--linha-forte);
+}
+.tele-resp__lista > div {
+  display: grid;
+  grid-template-columns: minmax(12rem, 3fr) minmax(0, 7fr);
+  gap: var(--s-2) var(--gutter);
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.tele-resp__lista dt {
+  font-weight: 700;
+}
+.tele-resp__lista dd {
+  color: var(--tinta-suave);
+}
+.tele-resp__nota {
+  color: var(--tinta-suave);
+  max-width: 70ch;
+}
+@media (max-width: 699px) {
+  .tele-resp__lista > div {
+    grid-template-columns: 1fr;
+  }
+}

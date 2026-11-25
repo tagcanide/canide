@@ -18,7 +18,7 @@ export default function Produto() {
       <div className="moldura produto__grade">
         <div className="produto__texto" data-grupo>
           <p className="rotulo" data-entra>
-            <span className="rotulo__num">03</span> O produto
+            <span className="rotulo__num">04</span> O produto
           </p>
           <h2 id="produto-titulo" className="titulo" data-titulo>
             Uma central no computador da equipe.

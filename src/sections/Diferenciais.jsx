@@ -31,7 +31,7 @@ export default function Diferenciais() {
     <section id="diferenciais" ref={ref} className="diferenciais secao" aria-labelledby="dif-titulo">
       <div className="moldura diferenciais__cabeca" data-grupo>
         <p className="rotulo" data-entra>
-          <span className="rotulo__num">06</span> Diferenciais
+          <span className="rotulo__num">09</span> Diferenciais
         </p>
         <h2 id="dif-titulo" className="titulo" data-titulo>
           O que o sistema garante.

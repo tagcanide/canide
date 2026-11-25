@@ -1,0 +1,217 @@
+/* A pesquisa: a pergunta em destaque, depois contexto, objetivos, método e achados em réguas finas. */
+
+.pesquisa {
+  display: grid;
+  gap: var(--s-9);
+}
+
+.pesq-abertura {
+  display: grid;
+  gap: var(--s-6);
+}
+.pesq-abertura .titulo {
+  max-width: 14ch;
+}
+.pesq-pergunta {
+  margin: 0;
+  display: grid;
+  gap: var(--s-4);
+  padding-left: var(--s-6);
+  border-left: 2px solid var(--azul);
+  max-width: 62rem;
+}
+.pesq-pergunta p {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--azul-texto);
+  text-wrap: pretty;
+}
+.pesq-pergunta footer {
+  color: var(--tinta-suave);
+  max-width: 70ch;
+}
+
+.pesq-rotulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+
+.pesq-contexto {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-7) var(--gutter);
+}
+.pesq-contexto__col {
+  display: grid;
+  align-content: start;
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha-forte);
+  max-width: var(--medida);
+}
+.pesq-destaque {
+  font-size: var(--t-subtitulo);
+  line-height: 1.35;
+  color: var(--tinta);
+}
+
+.pesq-objetivos {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s-7) var(--gutter);
+}
+.pesq-objetivos > div {
+  display: grid;
+  align-content: start;
+  gap: var(--s-4);
+}
+.pesq-objetivos__texto {
+  font-family: var(--fonte-editorial);
+  font-size: var(--t-subtitulo);
+  line-height: 1.38;
+  text-wrap: pretty;
+}
+.pesq-lista {
+  border-top: 1px solid var(--linha-forte);
+}
+.pesq-lista li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.pesq-lista .numeros {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding-top: 0.3em;
+  color: var(--azul-texto);
+}
+
+.pesq-metodo {
+  display: grid;
+  gap: var(--s-6);
+}
+.pesq-metodo__cabeca {
+  display: grid;
+  gap: var(--s-3);
+}
+.pesq-passos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--linha-forte);
+}
+.pesq-passos li {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding: var(--s-5) var(--s-5) var(--s-5) 0;
+  border-bottom: 1px solid var(--linha);
+}
+.pesq-passos li:not(:nth-child(3n + 1)) {
+  padding-left: var(--s-5);
+  border-left: 1px solid var(--linha);
+}
+.pesq-passos__num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--azul-texto);
+}
+.pesq-passos__nome {
+  font-family: var(--fonte-editorial);
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.pesq-passos__texto {
+  color: var(--tinta-suave);
+}
+.pesq-foguete {
+  color: var(--tinta-suave);
+  max-width: 76ch;
+}
+
+.pesq-achados {
+  display: grid;
+  gap: var(--s-6);
+}
+.pesq-achados__lista {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-6) var(--gutter);
+}
+.pesq-achados__lista > div {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: 2px solid var(--azul);
+}
+.pesq-achados__lista dt {
+  font-size: clamp(1.25rem, 1.8vw, 1.625rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.pesq-achados__lista dd {
+  color: var(--tinta-suave);
+}
+
+.pesq-inclusao {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+  gap: var(--s-4) var(--gutter);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha-forte);
+}
+.pesq-inclusao__texto {
+  display: grid;
+  gap: var(--s-4);
+}
+.pesq-palavras {
+  grid-column: 2;
+  color: var(--tinta-suave);
+}
+
+@media (max-width: 999px) {
+  .pesq-achados__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pesq-passos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pesq-passos li:not(:nth-child(3n + 1)) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .pesq-passos li:nth-child(2n) {
+    padding-left: var(--s-5);
+    border-left: 1px solid var(--linha);
+  }
+}
+@media (max-width: 799px) {
+  .pesq-contexto,
+  .pesq-objetivos,
+  .pesq-inclusao {
+    grid-template-columns: 1fr;
+  }
+  .pesq-palavras {
+    grid-column: 1;
+  }
+}
+@media (max-width: 599px) {
+  .pesq-achados__lista,
+  .pesq-passos {
+    grid-template-columns: 1fr;
+  }
+  .pesq-passos li:nth-child(2n) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .pesq-pergunta {
+    padding-left: var(--s-4);
+  }
+}

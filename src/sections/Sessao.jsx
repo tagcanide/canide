@@ -143,7 +143,7 @@ export default function Sessao() {
       <div className="moldura sessao__grade" data-grupo>
         <div className="sessao__texto">
           <p className="rotulo sessao__rotulo" data-entra>
-            <span className="rotulo__num">04</span> Funcionalidades · sessão real
+            <span className="rotulo__num">05</span> Funcionalidades · sessão real
           </p>
           <h2 id="sessao-titulo" className="titulo" data-titulo>
             Uma sessão, três leituras.
