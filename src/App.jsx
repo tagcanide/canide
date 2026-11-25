@@ -8,6 +8,7 @@ import Funcionalidades from './sections/Funcionalidades.jsx';
 import Sessao from './sections/Sessao.jsx';
 import Integracao from './sections/Integracao.jsx';
 import Diferenciais from './sections/Diferenciais.jsx';
+import Inspiracao from './sections/Inspiracao.jsx';
 import Final from './sections/Final.jsx';
 import Rodape from './sections/Rodape.jsx';
 
@@ -28,6 +29,7 @@ export default function App() {
         <Sessao />
         <Integracao />
         <Diferenciais />
+        <Inspiracao />
         <Final />
       </main>
       <Rodape />

@@ -1,0 +1,626 @@
+/* Nossa inspiração · homenagem a Gladys Mae West
+   Papel claro, azul como protagonista, linhas finas de prancha e marcações cartográficas.
+   Sem cartões: os blocos se separam por régua, numeração romana e espaço. */
+
+.inspiracao {
+  display: grid;
+  gap: clamp(5rem, 10vw, 9rem);
+  background: var(--branco);
+}
+
+/* ---------- Abertura ---------- */
+.insp-abertura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: var(--s-7) clamp(2rem, 6vw, 6rem);
+  align-items: end;
+}
+.insp-abertura__texto {
+  display: grid;
+  gap: var(--s-5);
+}
+.insp-abertura__nome {
+  color: var(--azul);
+  text-wrap: balance;
+}
+.insp-abertura__lema {
+  max-width: 22ch;
+  font-size: var(--t-subtitulo);
+  line-height: 1.3;
+  font-style: italic;
+  color: var(--tinta);
+}
+.insp-abertura__resumo {
+  max-width: 52ch;
+  color: var(--tinta-suave);
+  text-wrap: pretty;
+}
+.insp-abertura__datas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--linha-forte);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+
+.insp-retrato {
+  position: relative;
+  justify-self: end;
+  width: 100%;
+  max-width: 20rem;
+}
+.insp-retrato__quadro {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--raio-midia);
+  background: var(--papel-3);
+}
+/* Cantoneiras de prancha em volta do retrato */
+.insp-retrato::before,
+.insp-retrato::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 0 solid var(--azul);
+  pointer-events: none;
+}
+.insp-retrato::before {
+  top: -10px;
+  left: -10px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.insp-retrato::after {
+  top: -10px;
+  right: -10px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.insp-retrato__coord {
+  position: absolute;
+  top: 50%;
+  left: -1.25rem;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-rotulo);
+  color: var(--azul-texto);
+  white-space: nowrap;
+}
+
+/* ---------- Blocos ---------- */
+.insp-bloco {
+  display: grid;
+  gap: var(--s-7);
+}
+.insp-bloco__cabeca {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--gutter);
+  align-items: baseline;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--linha-forte);
+}
+.insp-bloco__cabeca .titulo {
+  max-width: 18ch;
+}
+.insp-bloco__num {
+  font-family: var(--fonte-editorial);
+  font-size: var(--t-subtitulo);
+  color: var(--azul-texto);
+}
+/* Corpo dos blocos alinhado à coluna do título */
+.insp-bloco > :not(.insp-bloco__cabeca):not(.insp-foto-larga):not(.insp-carreira__corpo) {
+  margin-left: calc(4.5rem + var(--gutter));
+}
+.insp-bloco .texto {
+  display: grid;
+  gap: var(--s-4);
+}
+
+/* 2 · régua da formação */
+.regua {
+  display: grid;
+  gap: var(--s-5);
+}
+.regua__linha {
+  width: 100%;
+  height: 24px;
+  overflow: visible;
+}
+.regua__linha path {
+  fill: none;
+  stroke: var(--linha-forte);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.regua__linha .regua__marca {
+  stroke: var(--azul);
+  stroke-width: 3;
+}
+.regua__lista {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--s-5) var(--gutter);
+}
+.regua__marco {
+  display: grid;
+  gap: var(--s-1);
+  align-content: start;
+}
+.regua__ano {
+  font-family: var(--fonte-editorial);
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+  line-height: 1;
+  color: var(--azul);
+}
+.regua__texto {
+  font-size: 0.875rem;
+  color: var(--tinta-suave);
+}
+
+/* 3 · Dahlgren */
+.insp-foto-larga {
+  display: grid;
+}
+.insp-foto-larga__quadro {
+  aspect-ratio: 1024 / 695;
+  max-width: 1024px;
+  border-radius: var(--raio-midia);
+}
+.insp-foto-larga__marca {
+  position: absolute;
+  left: var(--s-4);
+  bottom: var(--s-4);
+  padding: var(--s-1) var(--s-2);
+  background: var(--branco);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.insp-carreira__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--s-7) clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+.insp-carreira__corpo > .texto {
+  padding-left: calc(4.5rem + var(--gutter));
+}
+.marcos {
+  display: grid;
+  border-top: 1px solid var(--linha-forte);
+}
+.marcos__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'rotulo numero'
+    'texto numero';
+  gap: var(--s-1) var(--s-5);
+  align-items: center;
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--linha);
+}
+.marcos__rotulo {
+  grid-area: rotulo;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.marcos__numero {
+  grid-area: numero;
+  font-size: clamp(2.75rem, 5vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--azul);
+}
+.marcos__unidade {
+  font-size: 0.4em;
+  letter-spacing: 0;
+}
+.marcos__texto {
+  grid-area: texto;
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+}
+
+/* 4 · geoide */
+.insp-terra__enunciado {
+  max-width: 44ch;
+}
+.insp-terra__grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--s-7) clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+.insp-terra__figura {
+  position: sticky;
+  top: 6rem;
+}
+.geoide {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.geoide path,
+.geoide circle,
+.geoide ellipse {
+  fill: none;
+  stroke-linecap: round;
+}
+.geoide__grade path {
+  stroke: var(--linha);
+  stroke-dasharray: 2 6;
+}
+.geoide__esfera {
+  stroke: var(--tinta-suave);
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+}
+.geoide__elipsoide {
+  stroke: var(--turquesa-texto);
+  stroke-width: 1.25;
+}
+.geoide__geoide {
+  stroke: var(--azul);
+  stroke-width: 2.5;
+}
+.geoide__orbita {
+  stroke: var(--linha-forte);
+  stroke-width: 1;
+}
+.geoide__pulso {
+  stroke: var(--amarelo);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 5;
+}
+.geoide__satelite rect {
+  fill: var(--azul);
+}
+.geoide__painel {
+  stroke: var(--azul);
+  stroke-width: 2;
+}
+.geoide__guia {
+  stroke: var(--tinta-suave);
+  stroke-width: 0.75;
+}
+.geoide__legendas text {
+  font-family: var(--fonte-texto);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: var(--tinta-suave);
+}
+
+.etapas {
+  display: grid;
+  counter-reset: etapa;
+  border-top: 1px solid var(--linha-forte);
+}
+.etapas__item {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--s-1) var(--s-4);
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--linha);
+}
+.etapas__num {
+  grid-row: span 2;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--azul-texto);
+}
+.etapas__nome {
+  font-weight: 700;
+}
+.etapas__texto {
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+  text-wrap: pretty;
+}
+.insp-terra__nota {
+  padding-left: var(--s-5);
+  border-left: 2px solid var(--azul);
+  font-family: var(--fonte-editorial);
+  font-size: 1.125rem;
+  line-height: 1.55;
+}
+
+/* 5 · Seasat */
+.insp-seasat__grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s-7) clamp(2rem, 5vw, 5rem);
+  align-items: center;
+}
+.altimetro {
+  width: 100%;
+  max-width: 26rem;
+  height: auto;
+}
+.altimetro path {
+  fill: none;
+  stroke-linecap: round;
+}
+.altimetro rect {
+  fill: var(--azul);
+}
+.altimetro__orbita {
+  stroke: var(--linha-forte);
+  stroke-dasharray: 4 6;
+}
+.altimetro__painel {
+  stroke: var(--azul);
+  stroke-width: 2;
+}
+.altimetro__pulso {
+  stroke: var(--amarelo);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+.altimetro__onda {
+  stroke: var(--azul);
+  stroke-width: 2.5;
+}
+.altimetro__cota {
+  stroke: var(--tinta-suave);
+  stroke-width: 1;
+}
+.altimetro text {
+  font-family: var(--fonte-texto);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--tinta-suave);
+}
+
+/* 6 · reconhecimentos */
+.premios {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr);
+  gap: var(--s-5);
+}
+.premios__trilho {
+  width: 4px;
+  height: 100%;
+}
+.premios__trilho path {
+  fill: none;
+  stroke: var(--azul);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.premios__lista {
+  display: grid;
+}
+.premios__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr);
+  gap: var(--s-2) var(--gutter);
+  align-items: baseline;
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--linha);
+}
+.premios__item::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--s-5) - 6px);
+  top: calc(var(--s-5) + 0.9rem);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--branco);
+  border: 2px solid var(--azul);
+}
+.premios__ano {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1;
+  color: var(--azul);
+}
+.premios__nome {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+.premios__texto {
+  max-width: 56ch;
+  color: var(--tinta-suave);
+  font-size: 0.9375rem;
+}
+
+/* 7 · continua */
+.insp-continua__grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s-7) clamp(2rem, 5vw, 5rem);
+  align-items: center;
+}
+.livro {
+  display: grid;
+  gap: var(--s-3);
+  justify-self: start;
+  padding: var(--s-6) var(--s-6) var(--s-6) var(--s-5);
+  border-left: 6px solid var(--azul);
+}
+.livro__rotulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.livro__titulo {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-style: italic;
+  line-height: 1.1;
+}
+.livro__autoria {
+  font-size: 0.9375rem;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Conexão com o CANIDÉ ---------- */
+.insp-conexao {
+  display: grid;
+  gap: var(--s-6);
+  padding-top: var(--s-7);
+  border-top: 1px solid var(--azul);
+}
+.insp-conexao__texto {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--s-6) clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+.insp-conexao__abre {
+  font-size: clamp(1.5rem, 2.8vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.insp-conexao__texto .texto {
+  display: grid;
+  gap: var(--s-4);
+  color: var(--tinta-suave);
+}
+.insp-conexao__assinatura {
+  max-width: 30ch;
+  font-size: clamp(1.375rem, 2.4vw, 2rem);
+  line-height: 1.25;
+  color: var(--azul);
+  text-wrap: balance;
+}
+.insp-conexao__assinatura strong {
+  font-family: var(--fonte-texto);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Referências ---------- */
+.insp-fontes {
+  display: grid;
+  gap: var(--s-4);
+}
+.insp-fontes__titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.insp-fontes__lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--gutter);
+  list-style: decimal-leading-zero;
+  padding-left: 2.25rem;
+  font-size: var(--t-nota);
+  color: var(--tinta-suave);
+}
+.insp-fontes__lista li {
+  padding-block: var(--s-2);
+  border-bottom: 1px solid var(--linha);
+}
+.insp-fontes__lista a {
+  color: var(--azul-texto);
+  text-decoration-color: var(--linha-forte);
+}
+@media (hover: hover) {
+  .insp-fontes__lista a:hover {
+    text-decoration-color: var(--azul);
+  }
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1099px) {
+  .regua__lista {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .insp-carreira__corpo,
+  .insp-terra__grade,
+  .insp-seasat__grade,
+  .insp-continua__grade,
+  .insp-conexao__texto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .insp-terra__figura {
+    position: static;
+    max-width: 40rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .insp-abertura {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .insp-retrato {
+    justify-self: start;
+    max-width: min(17rem, 78vw);
+    margin-left: 1.75rem;
+  }
+  .insp-bloco__cabeca {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+  .insp-bloco > :not(.insp-bloco__cabeca):not(.insp-foto-larga):not(.insp-carreira__corpo) {
+    margin-left: 0;
+  }
+  .insp-carreira__corpo > .texto {
+    padding-left: 0;
+  }
+  .insp-abertura__datas [aria-hidden] {
+    display: none;
+  }
+  .insp-abertura__datas {
+    flex-direction: column;
+  }
+  .geoide__legendas text {
+    font-size: 20px;
+  }
+  .regua__linha {
+    display: none;
+  }
+  .regua__lista {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border-left: 1px solid var(--linha-forte);
+  }
+  .regua__marco {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--s-3);
+    padding: var(--s-3) 0 var(--s-3) var(--s-4);
+  }
+  .regua__ano {
+    font-size: 1.5rem;
+  }
+  .insp-foto-larga__marca {
+    left: var(--s-2);
+    bottom: var(--s-2);
+  }
+  .premios__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .insp-fontes__lista {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insp-terra__figura {
+    position: static;
+  }
+}

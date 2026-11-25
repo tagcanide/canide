@@ -28,7 +28,8 @@ src/bancada/useBancada.js     hook React: carrega a cena sob demanda, pausa fora
 src/lib/arara.js              silhueta da arara (corpo vetorizado do kit, cabeça desenhada à mão)
 src/components/Arara.jsx      silhueta em camadas animáveis (traço, máscara, cortes da face, olho)
 src/sections/                 JSX + CSS por seção (Hero, Identidade, Propósito, Produto, Desmontagem,
-                              Funcionalidades, Sessão, Integração, Diferenciais, Conhecer, Rodapé com o vídeo da logo)
+                              Funcionalidades, Sessão, Integração, Diferenciais, Nossa inspiração, Conhecer,
+                              Rodapé com o vídeo da logo)
 src/data/session.json         sessão real do receptor, sem latitude, longitude ou altitude GPS
 public/desmontagem/           vistas explodidas em SVG, usadas sem WebGL (geradas dos originais)
 public/brand, fonts, media    kit da marca, fontes e capturas do painel

@@ -12,7 +12,8 @@ const NAV = [
   { href: '#sessao', label: 'Sessão real' },
   { href: '#integracao', label: 'Integração' },
   { href: '#diferenciais', label: 'Diferenciais' },
-  { href: '#estado', label: 'Estado atual' }
+  { href: '#estado', label: 'Estado atual' },
+  { href: '#inspiracao', label: 'Nossa inspiração' }
 ];
 
 // Vídeo original da logo como faixa de ponta a ponta. Toca em loop só enquanto está na tela.
@@ -129,6 +130,8 @@ export default function Rodape() {
           <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>; “Arara canindé” por{' '}
           <a href="https://commons.wikimedia.org/wiki/File:Arara_canind%C3%A9_-_Ara_ararauna.jpg">Renato Augusto Martins</a>,{' '}
           <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Ambas via Wikimedia Commons, redimensionadas.
+          “Gladys West and Sam Smith” (1985), Marinha dos EUA, domínio público, via Wikimedia Commons. Retrato de Gladys
+          West do acervo do projeto, sem autoria identificada.
           Silhueta da arara desenhada a partir do kit de identidade CANIDÉ. Placas eletrônicas modeladas em 3D a partir dos
           desenhos técnicos do projeto.
         </p>

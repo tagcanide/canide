@@ -65,6 +65,7 @@ const CAPITULOS = [
   { id: 'sessao', nome: 'Sessão real', descricao: 'Dados gravados num teste do protótipo.', sel: '#sessao' },
   { id: 'integracao', nome: 'Integração', descricao: 'O caminho de uma leitura, do sensor à tela.', sel: '#integracao' },
   { id: 'diferenciais', nome: 'Diferenciais', descricao: 'O que distingue o sistema e em que pé está.', sel: '#diferenciais' },
+  { id: 'inspiracao', nome: 'Nossa inspiração', descricao: 'Gladys Mae West e a matemática da forma da Terra.', sel: '#inspiracao' },
   { id: 'contato', nome: 'Conhecer', descricao: 'Contato e próximos passos.', sel: '#contato' }
 ];
 

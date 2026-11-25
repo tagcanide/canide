@@ -8,7 +8,8 @@ const LINKS = [
   { href: '#proposito', label: 'Propósito' },
   { href: '#produto', label: 'Produto' },
   { href: '#funcionalidades', label: 'Funcionalidades' },
-  { href: '#integracao', label: 'Integração' }
+  { href: '#integracao', label: 'Integração' },
+  { href: '#inspiracao', label: 'Nossa inspiração' }
 ];
 
 export default function Nav() {
