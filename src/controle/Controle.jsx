@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { asset } from '../lib/asset.js';
-import { SEGURAR_MS, formatarCodigo, limparCodigo, remotoDisponivel } from '../remoto/conexao.js';
+import { formatarCodigo, limparCodigo, remotoDisponivel } from '../remoto/conexao.js';
+import { MODULOS, roteiroValido } from '../data/modulos.js';
+import { gravarFavoritos, lerFavoritos, lerSelecao, limparSelecao, salvarSelecao } from './armazenamento.js';
+import Livre, { vibrar } from './Livre.jsx';
+import Roteiro from './Roteiro.jsx';
+import { Favoritos, Selecao, Sequencia } from './Selecao.jsx';
 import './Controle.css';
 
 const CHAVE = 'canide-remoto-sid';
@@ -11,8 +16,6 @@ const FASES = {
   'computador-ausente': { tom: 'alerta', texto: 'Computador sem conexão. Aguardando…' },
   encerrado: { tom: 'fim', texto: 'Sessão encerrada' }
 };
-
-const vibrar = (ms = 12) => navigator.vibrate?.(ms);
 
 function lerSessaoDoEndereco() {
   const m = /[#&]s=([A-Za-z0-9_-]{24,})/.exec(window.location.hash);
@@ -33,83 +36,21 @@ function lerSessaoDoEndereco() {
   }
 }
 
-/** Botão que dá um passo no toque curto e rola continuamente enquanto pressionado. */
-function BotaoSegurar({ dir, rotulo, seta, enviar, desativado }) {
-  const temporizador = useRef(0);
-  const repetidor = useRef(0);
-  const segurando = useRef(false);
-  const pressionado = useRef(false);
-  const [ativo, setAtivo] = useState(false);
-
-  // pointerup e lostpointercapture chegam juntos: só o primeiro conta
-  const soltar = () => {
-    clearTimeout(temporizador.current);
-    clearInterval(repetidor.current);
-    if (!pressionado.current) return;
-    pressionado.current = false;
-    setAtivo(false);
-    if (segurando.current) {
-      segurando.current = false;
-      enviar('parar');
-    } else {
-      enviar(dir);
-    }
-  };
-
-  const pressionar = e => {
-    if (desativado) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    pressionado.current = true;
-    setAtivo(true);
-    vibrar();
-    temporizador.current = setTimeout(() => {
-      segurando.current = true;
-      vibrar(20);
-      enviar(`${dir}-segurar`);
-      repetidor.current = setInterval(() => enviar(`${dir}-segurar`), SEGURAR_MS);
-    }, 260);
-  };
-
-  useEffect(() => () => {
-    clearTimeout(temporizador.current);
-    clearInterval(repetidor.current);
-  }, []);
-
-  return (
-    <button
-      type="button"
-      className={`cr-botao cr-botao--grande ${ativo ? 'cr-botao--ativo' : ''}`}
-      disabled={desativado}
-      onPointerDown={pressionar}
-      onPointerUp={soltar}
-      onPointerCancel={soltar}
-      onLostPointerCapture={soltar}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          if (!e.repeat) enviar(dir);
-        }
-      }}
-      onContextMenu={e => e.preventDefault()}
-    >
-      <span className="cr-botao__seta" aria-hidden="true">
-        {seta}
-      </span>
-      <span>{rotulo}</span>
-      <span className="cr-botao__dica">Segure para rolar</span>
-    </button>
-  );
-}
-
 export default function Controle() {
   const [fase, setFase] = useState(remotoDisponivel() ? 'inicio' : 'indisponivel');
   const [codigo, setCodigo] = useState('');
   const [erro, setErro] = useState('');
   const [conexao, setConexao] = useState(null);
   const [eco, setEco] = useState('');
+  const [selecao, setSelecao] = useState([]);
+  const [salva, setSalva] = useState(null); // seleção salva nesta sessão
+  const [favoritos, setFavoritos] = useState(lerFavoritos);
+  const [movido, setMovido] = useState(null);
+  const [aviso, setAviso] = useState('');
   const controleRef = useRef(null);
   const ecoRef = useRef(0);
+  const movidoRef = useRef(0);
+  const avisoRef = useRef(0);
 
   async function conectarCom({ sid, codigo: cod }) {
     setErro('');
@@ -122,14 +63,22 @@ export default function Controle() {
         aoEstado: e => {
           setConexao(e);
           if (e.fase === 'encerrado') {
+            // fim da sessão: a seleção temporária vai junto; as favoritas ficam
             try {
               sessionStorage.removeItem(CHAVE);
             } catch {
               /* nada a limpar */
             }
+            limparSelecao();
+            setSalva(null);
           }
         }
       });
+      const guardada = lerSelecao(controleRef.current.sid);
+      if (guardada) {
+        setSelecao(guardada);
+        setSalva(guardada);
+      }
       setFase('controle');
     } catch (e) {
       try {
@@ -149,8 +98,8 @@ export default function Controle() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const enviar = tipo => {
-    const ok = controleRef.current?.enviar(tipo);
+  const enviar = (tipo, arg) => {
+    const ok = controleRef.current?.enviar(tipo, arg);
     if (!ok) return;
     if (!tipo.endsWith('-segurar')) {
       setEco(tipo);
@@ -158,16 +107,74 @@ export default function Controle() {
       ecoRef.current = setTimeout(() => setEco(''), 600);
     }
   };
-  const tocar = tipo => () => {
+
+  const avisar = texto => {
+    setAviso(texto);
+    clearTimeout(avisoRef.current);
+    avisoRef.current = setTimeout(() => setAviso(''), 2400);
+  };
+
+  /* ---------- seleção e ordem ---------- */
+  const alternar = id => {
+    vibrar(8);
+    setSelecao(s => (s.includes(id) ? s.filter(x => x !== id) : [...s, id]));
+  };
+  const mover = (i, d) => {
+    vibrar(8);
+    setSelecao(s => {
+      const j = i + d;
+      if (j < 0 || j >= s.length) return s;
+      const n = [...s];
+      [n[i], n[j]] = [n[j], n[i]];
+      setMovido(n[j]);
+      return n;
+    });
+    clearTimeout(movidoRef.current);
+    movidoRef.current = setTimeout(() => setMovido(null), 500);
+  };
+  const salvar = () => {
+    if (salvarSelecao(controleRef.current?.sid, selecao)) avisar('Seleção salva nesta sessão.');
+    else avisar('Este navegador não permite salvar. A seleção continua na tela.');
+    setSalva(selecao);
+  };
+  const limpar = () => {
+    limparSelecao();
+    setSalva(null);
+    setSelecao([]);
+    avisar('Seleção limpa.');
+  };
+  const iniciar = () => {
+    const ids = roteiroValido(selecao);
+    if (!ids.length) return;
+    vibrar(20);
+    salvarSelecao(controleRef.current?.sid, ids);
+    setSalva(ids);
+    enviar('roteiro', ids.join(','));
+  };
+  const guardarFavorito = nome => {
+    const lista = [...favoritos, { nome, ids: selecao }];
+    setFavoritos(lista);
+    avisar(gravarFavoritos(lista) ? `Sequência “${nome}” guardada neste celular.` : 'Este navegador não permite guardar sequências.');
+  };
+  const excluirFavorito = i => {
+    const lista = favoritos.filter((_, n) => n !== i);
+    setFavoritos(lista);
+    gravarFavoritos(lista);
+  };
+  const carregarFavorito = f => {
     vibrar();
-    enviar(tipo);
+    setSelecao(roteiroValido(f.ids));
+    avisar(`Sequência “${f.nome}” carregada. Revise e inicie.`);
   };
 
   const pagina = conexao?.estado;
   const pausado = Boolean(pagina?.pausado);
+  const roteiro = pagina?.roteiro || null;
   const infoFase = FASES[conexao?.fase] || FASES.conectado;
   const encerrado = conexao?.fase === 'encerrado';
-  const desativado = encerrado || conexao?.fase !== 'conectado' || pausado;
+  const conectado = !encerrado && conexao?.fase === 'conectado';
+  const desativado = !conectado || pausado;
+  const estadoSalva = !salva ? null : salva.join(',') === selecao.join(',') ? 'igual' : 'mudou';
 
   return (
     <main className="cr">
@@ -248,47 +255,42 @@ export default function Controle() {
             </div>
           ) : (
             <>
-              <div className="cr-secao" aria-live="polite">
-                <p className="cr-secao__num numeros">
-                  {pagina ? `${String(pagina.secao + 1).padStart(2, '0')} / ${String(pagina.total).padStart(2, '0')}` : '-- / --'}
-                </p>
-                <p className="cr-secao__nome">{pagina?.nome || 'Aguardando a página…'}</p>
-                <span className="cr-secao__barra" aria-hidden="true">
-                  <span style={{ transform: `scaleX(${pagina ? (pagina.secao + 1) / pagina.total : 0})` }} />
-                </span>
-              </div>
+              {roteiro ? (
+                <Roteiro roteiro={roteiro} pausado={pausado} enviar={enviar} eco={eco} conectado={conectado} />
+              ) : (
+                <>
+                  <Selecao
+                    selecao={selecao}
+                    alternar={alternar}
+                    todos={() => setSelecao(s => [...s, ...MODULOS.map(m => m.id).filter(id => !s.includes(id))])}
+                    nenhum={() => setSelecao([])}
+                    limpar={limpar}
+                    salvar={salvar}
+                    salva={estadoSalva}
+                  />
+                  <Sequencia selecao={selecao} mover={mover} remover={alternar} movido={movido} />
+                  <Favoritos favoritos={favoritos} selecao={selecao} guardar={guardarFavorito} carregar={carregarFavorito} excluir={excluirFavorito} />
 
-              <div className="cr-grade">
-                <BotaoSegurar dir="subir" rotulo="Subir" seta="↑" enviar={enviar} desativado={desativado} />
-                <BotaoSegurar dir="descer" rotulo="Descer" seta="↓" enviar={enviar} desativado={desativado} />
+                  <details className="cr-sumario cr-livre">
+                    <summary>Navegação livre, sem roteiro</summary>
+                    <Livre pagina={pagina} enviar={enviar} eco={eco} desativado={desativado} pausado={pausado} podePausar={conectado} />
+                  </details>
 
-                <button type="button" className={`cr-botao ${eco === 'anterior' ? 'cr-botao--eco' : ''}`} onClick={tocar('anterior')} disabled={desativado}>
-                  <span className="cr-botao__seta" aria-hidden="true">‹</span> Seção anterior
-                </button>
-                <button type="button" className={`cr-botao cr-botao--azul ${eco === 'proxima' ? 'cr-botao--eco' : ''}`} onClick={tocar('proxima')} disabled={desativado}>
-                  Próxima seção <span className="cr-botao__seta" aria-hidden="true">›</span>
-                </button>
+                  <div className="cr-iniciar">
+                    <button type="button" className="botao cr-iniciar__botao" onClick={iniciar} disabled={!selecao.length || !conectado}>
+                      Iniciar apresentação
+                      <span className="numeros">{selecao.length ? `${selecao.length} ${selecao.length === 1 ? 'módulo' : 'módulos'}` : 'escolha os módulos'}</span>
+                    </button>
+                  </div>
+                </>
+              )}
 
-                <button type="button" className={`cr-botao cr-botao--fino ${eco === 'inicio' ? 'cr-botao--eco' : ''}`} onClick={tocar('inicio')} disabled={desativado}>
-                  Ir ao início
-                </button>
-                <button type="button" className={`cr-botao cr-botao--fino ${eco === 'fim' ? 'cr-botao--eco' : ''}`} onClick={tocar('fim')} disabled={desativado}>
-                  Ir ao final
-                </button>
-
-                <button
-                  type="button"
-                  className={`cr-botao cr-botao--largo ${pausado ? 'cr-botao--pausado' : ''}`}
-                  aria-pressed={pausado}
-                  onClick={tocar(pausado ? 'retomar' : 'pausar')}
-                  disabled={encerrado || conexao?.fase !== 'conectado'}
-                >
-                  {pausado ? 'Retomar navegação' : 'Pausar navegação'}
-                </button>
-              </div>
+              <p className="cr-aviso-rapido" role="status" aria-live="polite">
+                {aviso}
+              </p>
 
               <button type="button" className="cr-desconectar" onClick={() => controleRef.current?.desconectar()}>
-                Desconectar
+                Encerrar sessão
               </button>
             </>
           )}

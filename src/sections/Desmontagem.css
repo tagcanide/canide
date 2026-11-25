@@ -27,7 +27,7 @@
 /* Seletor de placa: quatro alvos grandes, a medida como segunda linha */
 .seletor {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1px;
   margin-top: var(--s-5);
   background: var(--linha);
@@ -348,7 +348,12 @@
   font-size: 0.875rem;
 }
 
-@media (max-width: 1099px) {
+@media (max-width: 1279px) {
+  .seletor {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
   .seletor {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -408,5 +413,52 @@
   }
   .palco__alternativa {
     padding: 8% 4% 40%;
+  }
+}
+
+/* Papel da placa no CANIDÉ: só aparece quando a função está confirmada */
+.papel-area {
+  min-height: 5.5rem;
+}
+.papel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-2) var(--s-4);
+  align-items: baseline;
+  max-width: 62rem;
+  margin-top: var(--s-4);
+  padding-left: var(--s-4);
+  border-left: 2px solid var(--azul);
+}
+.papel__rotulo {
+  font-size: var(--t-nota);
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.papel__texto {
+  color: var(--tinta);
+}
+.papel__telas {
+  grid-column: 2;
+  font-size: var(--t-nota);
+  color: var(--tinta-suave);
+}
+.papel__telas a {
+  font-weight: 700;
+  color: var(--azul-texto);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+@media (max-width: 767px) {
+  .papel-area {
+    min-height: 9rem;
+  }
+  .papel {
+    grid-template-columns: 1fr;
+  }
+  .papel__telas {
+    grid-column: 1;
   }
 }

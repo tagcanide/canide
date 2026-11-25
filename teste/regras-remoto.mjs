@@ -45,7 +45,12 @@ await espera('intruso não assume controle já pareado', set(ref(intruso.db, `se
 await espera('intruso não envia comando', set(ref(intruso.db, `sessoes/${sid}/comando`), { tipo: 'descer', seq: Date.now(), t: Date.now() }), false);
 await espera('intruso não apaga a sessão', remove(ref(intruso.db, `sessoes/${sid}`)), false);
 await espera('celular envia comando válido', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'descer', seq: 100, t: Date.now() }), true);
-await espera('celular não repete seq (reenvio)', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'descer', seq: 100, t: Date.now() }), false);
+await espera('celular envia roteiro de módulos', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'roteiro', arg: 'abertura,placa-bme-280,painel-atmosfera', seq: 150, t: Date.now() }), true);
+await espera('celular vai a um módulo do roteiro', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'modulo-ir', arg: '2', seq: 160, t: Date.now() }), true);
+await espera('celular não envia argumento com caracteres fora da lista', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'roteiro', arg: '<script>', seq: 170, t: Date.now() }), false);
+await espera('celular não envia argumento longo demais', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'roteiro', arg: 'a,'.repeat(400), seq: 180, t: Date.now() }), false);
+await espera('celular não envia argumento numérico fora do formato', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'modulo-ir', arg: 3, seq: 190, t: Date.now() }), false);
+await espera('celular não repete seq (reenvio)', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'descer', seq: 160, t: Date.now() }), false);
 await espera('celular não envia tipo desconhecido', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'executar', seq: 200, t: Date.now() }), false);
 await espera('celular não escreve campo extra', set(ref(cel.db, `sessoes/${sid}/comando`), { tipo: 'descer', seq: 300, t: Date.now(), x: 1 }), false);
 await espera('celular não altera o host', set(ref(cel.db, `sessoes/${sid}/host`), cel.uid), false);

@@ -13,7 +13,8 @@ import { criarNavegador } from './navegador.js';
 /**
  * estados emitidos em aoEstado:
  *  { fase: 'criando' | 'aguardando' | 'conectado' | 'controle-ausente' | 'expirado' | 'encerrado' | 'erro',
- *    online, codigo, url, pareamentoAte, expira, erro }
+ *    online, codigo, url, pareamentoAte, expira, erro, pagina }
+ * pagina: { secao, total, nome, pausado, roteiro: { ids, atual } | null }, o mesmo estado enviado ao celular.
  */
 export async function iniciarApresentacao({ aoEstado }) {
   const { db, uid, rtdb } = await conectar();
@@ -43,6 +44,7 @@ export async function iniciarApresentacao({ aoEstado }) {
 
   const navegador = criarNavegador({
     aoMudar: e => {
+      emitir({ pagina: e }); // o computador também mostra o roteiro (marcador da apresentação)
       if (controleUid) update(ref(db, `sessoes/${sid}/estado`), e).catch(() => {});
     }
   });
@@ -85,7 +87,7 @@ export async function iniciarApresentacao({ aoEstado }) {
       if (!c || c.seq <= ultimoSeq) return;
       ultimoSeq = c.seq;
       if (Date.now() + desvio - c.t > COMANDO_VELHO_MS) return;
-      navegador.executar(c.tipo);
+      navegador.executar(c.tipo, c.arg);
     })
   );
 

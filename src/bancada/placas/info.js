@@ -1,7 +1,7 @@
 // Dados das placas sem geometria: nomes, medidas e rótulos (português, a partir dos rótulos dos originais).
 // Fica fora do pacote do Three.js para a interface aparecer antes do 3D.
-// Descrições físicas tiradas do próprio modelo. A função de cada placa no sistema CANIDÉ ainda não foi
-// informada; quando for, entra em `funcao` e aparece na interface.
+// Descrições físicas tiradas do próprio modelo. `funcao` só existe onde o papel da placa no CANIDÉ está
+// confirmado (tag: GPS NEO-6M e BME280, conferidos no gateway); nas demais ainda não foi informado.
 export const INFO = {
   'esp32-c3': {
     id: 'esp32-c3',
@@ -40,6 +40,43 @@ export const INFO = {
     extras: [
       { id: 'pcb', nome: 'Placa preta com antena dourada', texto: 'Placa de 31 × 58 mm e 1,6 mm de espessura, com quatro furos de fixação.', ponto: [22.6, 5.8, 0] },
       { id: 'usb', nome: 'Conector micro-USB', texto: 'Carcaça metálica na borda inferior da placa.', ponto: [14.0, 57.4, 1.4] }
+    ]
+  },
+  'gy-neo6mv2': {
+    id: 'gy-neo6mv2',
+    nome: 'GY-NEO6MV2 GPS',
+    medidas: '25 × 35 mm',
+    arquivo: 'gy-neo6mv2-exploded.html',
+    funcao: 'Receptor GPS da tag (NEO-6M). Fornece fix, satélites, latitude, longitude e altitude GPS, os dados do Plano de voo local.',
+    rotulos: {
+      ant: { nome: 'Antena cerâmica de patch', texto: 'Bloco amarelo de 24 × 24 mm sobre base verde, ligado à placa por cabo; fica ao lado da placa quando montada.' },
+      coax: { nome: 'Cabo coaxial com plugue U.FL/IPEX', texto: 'Cabo fino que leva o sinal da antena até o soquete da placa.' },
+      sock: { nome: 'Soquete IPEX', texto: 'Soquete dourado de 3 × 3 mm onde o plugue do cabo encaixa.' },
+      neo: { nome: 'Receptor GPS u-blox NEO-6M', texto: 'Módulo de 12,2 × 16 mm com blindagem metálica marcada u-blox NEO-6M e doze terminais por lado.' },
+      ee: { nome: 'EEPROM 24C32', texto: 'Memória em encapsulamento SOIC de oito terminais, marcada 24C32 no modelo.' },
+      reg: { nome: 'Regulador de tensão', texto: 'Encapsulamento SOT-23-5 marcado LDO, com cinco terminais.' },
+      bat: { nome: 'Bateria de backup e suporte', texto: 'Célula ML414 de 6,8 mm de diâmetro com lingueta metálica de contato.' },
+      smd: { nome: 'Resistores, capacitores e LEDs SMD', texto: 'Seis componentes de montagem em superfície, entre eles um LED verde e um branco.' }
+    },
+    extras: [
+      { id: 'pcb', nome: 'Placa azul', texto: 'Placa de circuito de 25 × 35 mm e 1,2 mm de espessura, com quatro furos de fixação.', ponto: [0, 24, -0.6] },
+      { id: 'pins', nome: 'Pinos VCC, RX, TX e GND', texto: 'Quatro furos metalizados com passo de 2,54 mm na borda inferior da placa.', ponto: [11, 32.6, 0] }
+    ]
+  },
+  'bme-280': {
+    id: 'bme-280',
+    nome: 'BME/BMP280',
+    medidas: '11,5 × 15 mm',
+    arquivo: 'bme-bmp280-exploded.html',
+    funcao: 'Sensor ambiental da tag (BME280). Mede temperatura, pressão e umidade relativa; a altitude barométrica sai da pressão. São os dados da tela Atmosfera.',
+    rotulos: {
+      sen: { nome: 'Sensor BME/BMP280', texto: 'Encapsulamento LGA de 2,5 × 2,5 mm com tampa metálica e um furo de respiro para o ar.' },
+      smd: { nome: 'Capacitores e resistores SMD', texto: 'Quatro componentes de montagem em superfície em volta do sensor.' }
+    },
+    extras: [
+      { id: 'pcb', nome: 'Placa roxa', texto: 'Placa de circuito de 11,5 × 15 mm e 1 mm de espessura.', ponto: [3.0, 4.6, 0] },
+      { id: 'hole', nome: 'Furo de fixação', texto: 'Furo com borda dourada no canto da placa, para prender o módulo.', ponto: [4.2, 13.6, 0] },
+      { id: 'pads', nome: 'Pads VIN, GND, SCL e SDA', texto: 'Quatro furos metalizados da barra de pinos: alimentação e barramento I²C.', ponto: [10.8, 9.2, 0] }
     ]
   },
   'bz-251': {
@@ -82,10 +119,12 @@ export const INFO = {
   }
 };
 
-export const ORDEM = ['esp32-c3', 'bz-251', 'nodemcu-v3', 'modulos-rf'];
+export const ORDEM = ['esp32-c3', 'gy-neo6mv2', 'bme-280', 'bz-251', 'nodemcu-v3', 'modulos-rf'];
 
 export const CARREGAR = {
   'esp32-c3': () => import('./esp32c3.js'),
+  'gy-neo6mv2': () => import('./neo6m.js'),
+  'bme-280': () => import('./bme280.js'),
   'bz-251': () => import('./bz251.js'),
   'nodemcu-v3': () => import('./nodemcu.js'),
   'modulos-rf': () => import('./rf.js')

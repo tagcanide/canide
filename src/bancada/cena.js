@@ -3,7 +3,7 @@
 // chegam prontos da timeline do Anime.js (camada React). Só desenha quando algo muda.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { construir } from './kit.js';
+import { cabo, construir, geometriaCabo } from './kit.js';
 
 // Mesma curva e janela de cada peça dos arquivos originais.
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -70,6 +70,7 @@ export function criarBancada(canvas, { mobile = false, sombras = true } = {}) {
   let interno = null;
   let placaGrupo = null;
   const partes = []; // { def, grupo, chave, giro }
+  const cabos = []; // { grupo, malha, def, de, dono }: cabos que ligam duas peças e se redesenham no voo
   let raio = 30;
   let quadros = [{ centro: new THREE.Vector3(), raio: 30 }, { centro: new THREE.Vector3(), raio: 30 }];
   const alvoMundo = new THREE.Vector3();
@@ -92,6 +93,7 @@ export function criarBancada(canvas, { mobile = false, sombras = true } = {}) {
     raiz.remove(interno);
     interno = null;
     partes.length = 0;
+    cabos.length = 0;
   }
 
   function carregar(placa) {
@@ -114,7 +116,18 @@ export function criarBancada(canvas, { mobile = false, sombras = true } = {}) {
       pivo.add(grupo);
       pivo.userData.chave = d.group || d.id;
       interno.add(pivo);
-      partes.push({ def: d, grupo: pivo, base, chave: d.group || d.id, giro: [(rnd() - 0.5) * 0.5, (rnd() - 0.5) * 0.3, (rnd() - 0.5) * 0.7] });
+      const giro = [(rnd() - 0.5) * 0.5, (rnd() - 0.5) * 0.3, (rnd() - 0.5) * 0.7];
+      partes.push({ def: d, grupo: pivo, base, chave: d.group || d.id, giro: d.semGiro ? [0, 0, 0] : giro });
+    }
+    // cabo entre a peça dona e outra (d.cabo.de): as pontas acompanham o deslocamento das duas
+    for (const dono of partes) {
+      const c = dono.def.cabo;
+      if (!c) continue;
+      const de = partes.find(q => q.def.id === c.de);
+      const grupo = construir(() => cabo(c.curva(c.a, c.b), c.raio, c.cor));
+      grupo.userData.chave = dono.chave;
+      interno.add(grupo);
+      cabos.push({ grupo, malha: grupo.children[0], def: c, de, dono });
     }
     // caixa da desmontagem completa, para enquadrar e posicionar o chão
     // (em coordenadas do mundo: x, z da placa para cima, y da placa)
@@ -160,12 +173,18 @@ export function criarBancada(canvas, { mobile = false, sombras = true } = {}) {
       if (realce) pt.grupo.position.z += 2.2 * realce * Math.sign(dz || 1);
       pos.set([pt.def.x, pt.def.y, pt.base[2] - (dz < 0 ? 0 : pt.base[2]), pt.grupo.position.x, pt.grupo.position.y, pt.grupo.position.z], i * 6);
     });
+    for (const cb of cabos) {
+      const desloc = (pt, p0) => p0.map((v, i) => v + pt.grupo.position.getComponent(i) - pt.base[i]);
+      cb.malha.geometry.dispose();
+      cb.malha.geometry = geometriaCabo(cb.def.curva(desloc(cb.de, cb.def.a), desloc(cb.dono, cb.def.b)), cb.def.raio);
+    }
     guias.geometry.attributes.position.needsUpdate = true;
     guias.computeLineDistances();
     guiasMat.opacity = clamp(p * 4) * 0.55 * (1 - nivelFoco * 0.7);
     // foco: as demais peças recuam para segundo plano
     const dim = o => o.chave !== foco;
     for (const pt of partes) opacidade(pt.grupo, foco && dim(pt) ? 1 - nivelFoco * 0.86 : 1);
+    for (const cb of cabos) opacidade(cb.grupo, foco && dim(cb.dono) ? 1 - nivelFoco * 0.86 : 1);
     const naPlaca = foco && def.extras?.some(e => e.id === foco);
     opacidade(placaGrupo, foco && !naPlaca ? 1 - nivelFoco * 0.7 : 1);
   }
@@ -282,7 +301,7 @@ export function criarBancada(canvas, { mobile = false, sombras = true } = {}) {
     pegar(nx, ny) {
       if (!interno) return null;
       ray.setFromCamera({ x: nx, y: ny }, camera);
-      const alvos = partes.map(p => p.grupo);
+      const alvos = [...partes.map(p => p.grupo), ...cabos.map(c => c.grupo)];
       const hit = ray.intersectObjects(alvos, true)[0];
       let o = hit?.object;
       while (o && !o.userData.chave) o = o.parent;

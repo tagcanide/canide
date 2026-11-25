@@ -5,7 +5,8 @@
   color: var(--tinta);
   transition:
     background-color var(--dur-media) var(--ease-out),
-    color var(--dur-media) var(--ease-out);
+    color var(--dur-media) var(--ease-out),
+    transform var(--dur-lenta) var(--ease-out); /* sai de cena no modo de apresentação */
 }
 
 /* Depois do hero: papel chapado e uma linha fina, sem transparência */

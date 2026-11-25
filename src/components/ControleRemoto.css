@@ -211,3 +211,125 @@
     padding: var(--s-5);
   }
 }
+
+/* ---------- Modo de apresentação (roteiro escolhido no celular) ---------- */
+/* A barra de navegação sai de cena; o conteúdo e as animações continuam iguais. */
+html[data-apresentacao] .nav {
+  transform: translateY(-110%);
+  pointer-events: none;
+}
+
+/* Tela do painel em foco: as outras recuam para segundo plano */
+html[data-apresentacao] .modulo {
+  transition: opacity var(--dur-lenta) var(--ease-out);
+}
+html[data-apresentacao] .modulos:has(.modulo[data-apresentando]) .modulo:not([data-apresentando]) {
+  opacity: 0.22;
+}
+html[data-apresentacao] .modulo .modulo__tela {
+  transition:
+    border-color var(--dur-lenta) var(--ease-out),
+    box-shadow var(--dur-lenta) var(--ease-out);
+}
+html[data-apresentacao] .modulo[data-apresentando] .modulo__tela {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 1px var(--azul);
+}
+
+/* Placa em foco: o seletor mostra só a placa apresentada em destaque */
+html[data-apresentacao] .desmontagem[data-apresentando] .seletor__item[aria-pressed='false'] {
+  opacity: 0.45;
+  transition: opacity var(--dur-lenta) var(--ease-out);
+}
+
+/* Marcador no telão: discreto, no canto superior direito (livre com a barra de navegação fora de cena) */
+.marcador-ap {
+  position: fixed;
+  right: var(--margem);
+  top: var(--s-3);
+  z-index: var(--z-nav);
+  display: grid;
+  gap: var(--s-1);
+  width: min(21rem, calc(100vw - 2 * var(--margem)));
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-ui);
+  background: var(--papel);
+  pointer-events: none;
+  animation: marcador-entra var(--dur-media) var(--ease-out);
+}
+.marcador-ap__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-rotulo);
+  text-transform: uppercase;
+  color: var(--azul-texto);
+}
+.marcador-ap__nome {
+  font-family: var(--fonte-editorial);
+  font-size: 1.25rem;
+  line-height: 1.15;
+  animation: marcador-nome var(--dur-lenta) var(--ease-out);
+}
+.marcador-ap__proximo {
+  font-size: 0.8125rem;
+  color: var(--tinta-suave);
+}
+.marcador-ap__trilho {
+  display: flex;
+  gap: 3px;
+  margin: var(--s-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.marcador-ap__trilho li {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--linha);
+  transition: background-color var(--dur-lenta) var(--ease-out);
+}
+.marcador-ap__trilho li.feito {
+  background: var(--linha-forte);
+}
+.marcador-ap__trilho li.atual {
+  background: var(--azul);
+}
+.marcador-ap--pausado {
+  border-color: var(--amarelo);
+}
+@keyframes marcador-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes marcador-nome {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (max-width: 767px) {
+  .marcador-ap {
+    padding: var(--s-3) var(--s-4);
+  }
+  .marcador-ap__nome {
+    font-size: 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-apresentacao] .modulo,
+  .marcador-ap__trilho li {
+    transition: none;
+  }
+  .marcador-ap,
+  .marcador-ap__nome {
+    animation: none;
+  }
+}

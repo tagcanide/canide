@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { formatarCodigo, remotoDisponivel } from '../remoto/conexao.js';
+import { GRUPOS, MODULO } from '../data/modulos.js';
 import './ControleRemoto.css';
 
 const FASES = {
@@ -23,6 +25,35 @@ function useRestante(ate) {
   if (!ate) return '';
   const s = Math.max(0, Math.round((ate - agora) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** Marcador da apresentação no telão: módulo atual, próximo e progresso da sequência escolhida no celular. */
+function Marcador({ roteiro, pausado, tom }) {
+  const ids = roteiro.ids.split(',').filter(id => MODULO[id]);
+  const i = Math.max(0, Math.min(ids.length - 1, roteiro.atual));
+  const atual = MODULO[ids[i]];
+  const proximo = MODULO[ids[i + 1]];
+  if (!atual) return null;
+  return (
+    <aside className={`marcador-ap ${pausado ? 'marcador-ap--pausado' : ''}`} aria-label="Apresentação em andamento" aria-live="polite">
+      <div className="marcador-ap__topo">
+        <span className={`remoto__ponto remoto__ponto--${tom}`} aria-hidden="true" />
+        <span className="numeros">
+          {String(i + 1).padStart(2, '0')} / {String(ids.length).padStart(2, '0')}
+        </span>
+        <span>{pausado ? 'Pausada' : GRUPOS[atual.grupo].nome}</span>
+      </div>
+      <p key={atual.id} className="marcador-ap__nome">
+        {atual.nome}
+      </p>
+      {proximo && <p className="marcador-ap__proximo">A seguir: {proximo.nome}</p>}
+      <ol className="marcador-ap__trilho" aria-hidden="true">
+        {ids.map((id, n) => (
+          <li key={id} className={n < i ? 'feito' : n === i ? 'atual' : ''} />
+        ))}
+      </ol>
+    </aside>
+  );
 }
 
 /** Botão "Controle remoto" e a janela de pareamento. Só aparece com o serviço configurado. */
@@ -87,6 +118,7 @@ export default function ControleRemoto({ className = '' }) {
   if (!remotoDisponivel()) return null;
 
   const fase = FASES[estado?.fase] || FASES.criando;
+  const roteiro = estado?.pagina?.roteiro || null;
   const textoFase = estado?.fase === 'encerrado' && estado.motivo ? estado.motivo : fase.texto;
 
   return (
@@ -148,18 +180,26 @@ export default function ControleRemoto({ className = '' }) {
         </div>
       </dialog>
 
-      {ativa && !aberto && (
-        <div className={`remoto__selo remoto__selo--${fase.tom}`} role="status">
-          <span className={`remoto__ponto remoto__ponto--${fase.tom}`} aria-hidden="true" />
-          <span>{fase.texto}</span>
-          <button type="button" onClick={abrir}>
-            Detalhes
-          </button>
-          <button type="button" onClick={encerrar}>
-            Encerrar
-          </button>
-        </div>
-      )}
+      {/* no corpo da página: a barra de navegação some durante a apresentação e não pode levar estes junto */}
+      {ativa &&
+        !aberto &&
+        createPortal(
+          roteiro ? (
+            <Marcador roteiro={roteiro} pausado={Boolean(estado.pagina?.pausado)} tom={fase.tom} />
+          ) : (
+            <div className={`remoto__selo remoto__selo--${fase.tom}`} role="status">
+              <span className={`remoto__ponto remoto__ponto--${fase.tom}`} aria-hidden="true" />
+              <span>{fase.texto}</span>
+              <button type="button" onClick={abrir}>
+                Detalhes
+              </button>
+              <button type="button" onClick={encerrar}>
+                Encerrar
+              </button>
+            </div>
+          ),
+          document.body
+        )}
     </>
   );
 }

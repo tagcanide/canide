@@ -17,6 +17,7 @@ np## Estrutura
 index.html                    metadados, Open Graph, favicon
 vite.config.js                base relativa, divisão de código (three, anime), robots.txt e sitemap.xml
 src/config.js                 links e contatos centralizados (repositório, sistema, e-mail, redes)
+src/data/modulos.js           fonte única dos módulos (capítulos, telas do painel, placas): site e controle remoto
 src/styles/tokens.css         design system claro: cores do manual, tipografia, espaços, camadas, movimento
 src/styles/base.css           reset, grade, rótulos de seção, botões, foco, movimento reduzido
 src/lib/movimento.js          Anime.js: entradas de seção, revelação de títulos por linha, scroll
@@ -34,7 +35,7 @@ public/brand, fonts, media    kit da marca, fontes e capturas do painel
 *-exploded.html               desenhos técnicos originais das placas (fonte da geometria, não alterar)
 scripts/gerar-alternativas.mjs  regera public/desmontagem/ a partir dos *-exploded.html
 teste/bancada.html            página local para inspecionar cada placa (fora do build):
-                              /teste/bancada.html?placa=esp|bz|node|rf&p=0..1&az=&el=
+                              /teste/bancada.html?placa=esp|bz|node|rf|neo|bme&p=0..1&az=&el=
 backup/site-claro-2026-11-23/ primeira versão clara
 backup/site-escuro-2026-11-23/ versão escura
 ```
@@ -73,6 +74,19 @@ Permite conduzir a apresentação pelo celular: o computador mostra um QR Code e
 `controle.html` e passa a rolar a página, ir para a próxima seção ou para a anterior, ir ao início ou ao fim e pausar.
 A rolagem remota anda quadro a quadro (nunca salta), então as animações ligadas ao scroll e a cena 3D acompanham.
 
+### Módulos da apresentação
+
+No celular, a área **Módulos da apresentação** lista tudo o que `src/data/modulos.js` define: capítulos da página,
+as cinco telas do painel e as seis placas (lidas de `src/bancada/placas/info.js`). Escolha os módulos, ajuste a ordem
+com subir e descer e toque em **Iniciar apresentação**. O computador passa a andar só pelos módulos escolhidos, na
+ordem escolhida; nas placas, a página monta a placa atual, troca e desmonta a nova pela mesma rolagem do palco.
+A navegação pública não muda: os módulos fora da seleção continuam no site.
+
+- **Seleção da sessão:** fica no `sessionStorage` do celular, presa à sessão, e é apagada ao encerrar.
+- **Sequências favoritas:** ficam no `localStorage` do celular (até 8), separadas da seleção da sessão.
+- Comandos novos no mesmo canal: `roteiro`, `roteiro-sair`, `modulo-proximo`, `modulo-anterior`, `modulo-inicio`,
+  `modulo-fim`, `modulo-ir`. O argumento (`arg`) só aceita `a-z`, `0-9`, vírgula e hífen, até 600 caracteres.
+
 **Comunicação:** Firebase Realtime Database com login anônimo. Funciona com celular e computador em redes
 diferentes, só com internet. Não há servidor próprio.
 
@@ -106,7 +120,7 @@ conta de serviço ou credenciais administrativas no frontend.
 ```bash
 npx firebase-tools emulators:start --project demo-canide-remoto --only auth,database
 npm run dev:remoto              # usa .env.emulador.local (fora do Git), em http://localhost:5174
-node teste/regras-remoto.mjs    # 22 verificações das regras de segurança
+node teste/regras-remoto.mjs    # 27 verificações das regras de segurança
 ```
 
 `.env.emulador.local` contém só valores de demonstração do emulador (projeto `demo-*`, sem conta real).

@@ -5,6 +5,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const ORIGINAIS = {
   'esp32-c3': 'esp32-c3-exploded.html',
+  'gy-neo6mv2': 'gy-neo6mv2-exploded.html',
+  'bme-280': 'bme-bmp280-exploded.html',
   'bz-251': 'bz251-gps-exploded.html',
   'nodemcu-v3': 'nodemcu-v3-exploded.html',
   'modulos-rf': 'rf-modules-exploded.html'

@@ -3,9 +3,14 @@
 // ligadas ao scroll, a cena 3D e as entradas de seção recebem a mesma sequência de eventos de uma
 // rolagem feita à mão, nos dois sentidos.
 import { SEGURAR_LIMITE_MS } from './conexao.js';
+import { MODULO, roteiroValido } from '../data/modulos.js';
 
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const ALTURA_NAV = 72;
+
+// Onde cada placa para dentro do palco da desmontagem: peças separadas, na etapa de exploração.
+const FRACAO_PLACA = 0.56;
+const ESPERA_PLACA_MS = 520; // tempo para a cena trocar de placa antes de desmontar
 
 // Paradas da apresentação: o topo de cada seção e, dentro da desmontagem, uma parada por etapa.
 const SECOES = [
@@ -52,23 +57,32 @@ export function criarNavegador({ aoMudar } = {}) {
   let pausado = false;
   let continuo = null; // { dir, ultimoSinal, velocidade }
   let ultimoInstante = 0;
+  let espera = 0; // troca de placa em andamento
+  let roteiro = null; // { ids, atual }: apresentação personalizada vinda do celular
+  let destacado = null;
   const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const raiz = document.documentElement;
 
   const rolarPara = y => window.scrollTo({ top: y, behavior: 'instant' });
 
   function parar() {
     cancelAnimationFrame(quadro);
+    clearTimeout(espera);
     quadro = 0;
+    espera = 0;
     continuo = null;
   }
 
   /** Desliza até y com aceleração e frenagem; a duração cresce com a distância. */
-  function deslizar(y) {
+  function deslizar(y, aoChegar) {
     parar();
     const inicio = window.scrollY;
     const fim = Math.max(0, Math.min(maxScroll(), y));
     const dist = Math.abs(fim - inicio);
-    if (dist < 2) return informar();
+    if (dist < 2) {
+      if (aoChegar) return aoChegar();
+      return informar();
+    }
     const dur = reduzir ? 0 : Math.min(2200, Math.max(650, dist * 0.55));
     const t0 = performance.now();
     const passo = agora => {
@@ -77,7 +91,8 @@ export function criarNavegador({ aoMudar } = {}) {
       if (k < 1) quadro = requestAnimationFrame(passo);
       else {
         quadro = 0;
-        informar();
+        if (aoChegar) aoChegar();
+        else informar();
       }
     };
     quadro = requestAnimationFrame(passo);
@@ -128,20 +143,130 @@ export function criarNavegador({ aoMudar } = {}) {
   function informar() {
     const lista = paradas();
     const i = indiceAtual(lista);
-    aoMudar?.({ secao: i, total: lista.length, nome: lista[i]?.nome || '', pausado });
+    aoMudar?.({
+      secao: i,
+      total: lista.length,
+      nome: lista[i]?.nome || '',
+      pausado,
+      // o Realtime Database guarda listas mal: os ids viajam como texto separado por vírgulas
+      roteiro: roteiro ? { ids: roteiro.ids.join(','), atual: roteiro.atual } : null
+    });
   }
 
-  function executar(tipo) {
+  /* ---------- apresentação personalizada ---------- */
+
+  function destacar(el) {
+    if (destacado && destacado !== el) destacado.removeAttribute('data-apresentando');
+    destacado = el || null;
+    destacado?.setAttribute('data-apresentando', '');
+  }
+
+  function marcarModo() {
+    if (roteiro) raiz.dataset.apresentacao = pausado ? 'pausada' : 'ativa';
+    else delete raiz.dataset.apresentacao;
+  }
+
+  // placa exibida agora (a seção marca a escolha atual, feita aqui ou à mão no computador)
+  const placaAtual = () => document.querySelector('#desmontagem')?.dataset.placa;
+
+  function trocarPlaca(id) {
+    window.dispatchEvent(new CustomEvent('canide:placa', { detail: id }));
+  }
+
+  /** Leva a página até um módulo. Placas: monta, troca e desmonta de novo pela rolagem do palco. */
+  function mostrar(m) {
+    const { alvo } = m;
+    if (alvo.tipo === 'placa') {
+      const palco = document.querySelector('.palco');
+      const secao = document.querySelector('#desmontagem');
+      if (!palco || !secao) return informar();
+      destacar(secao);
+      // medidas sempre na hora: trocar de placa pode mudar a altura do cabeçalho da seção
+      const curso = () => palco.offsetHeight - window.innerHeight;
+      const yIni = () => topo(palco);
+      const yAlvo = () => yIni() + curso() * FRACAO_PLACA;
+      const depoisDaTroca = fn => {
+        espera = setTimeout(() => {
+          espera = 0;
+          fn();
+        }, ESPERA_PLACA_MS);
+      };
+      if (curso() <= 0) {
+        // sem rolagem ligada à cena (movimento reduzido ou sem WebGL): só troca a placa e mostra a seção
+        trocarPlaca(alvo.placa);
+        return depoisDaTroca(() => deslizar(topo(secao) - ALTURA_NAV));
+      }
+      if (placaAtual() === alvo.placa) return deslizar(yAlvo());
+      const visivel = window.scrollY > yIni() - window.innerHeight && window.scrollY < yIni() + curso() + window.innerHeight * 0.5;
+      if (!visivel) {
+        trocarPlaca(alvo.placa);
+        return depoisDaTroca(() => deslizar(yAlvo()));
+      }
+      // a placa atual está na tela: monta (volta ao início do palco), troca e desmonta a nova
+      return deslizar(yIni(), () => {
+        trocarPlaca(alvo.placa);
+        informar();
+        depoisDaTroca(() => deslizar(yAlvo()));
+      });
+    }
+    const el = document.querySelector(alvo.sel);
+    if (!el) return informar();
+    destacar(el);
+    if (alvo.tipo === 'painel') {
+      // a tela do painel fica centrada; se for mais alta que a janela, mostra o começo
+      const livre = window.innerHeight - ALTURA_NAV;
+      const y = el.offsetHeight > livre - 48 ? topo(el) - ALTURA_NAV - 24 : topo(el) - ALTURA_NAV - (livre - el.offsetHeight) / 2;
+      return deslizar(y);
+    }
+    return deslizar(m.id === 'abertura' ? 0 : topo(el) - ALTURA_NAV);
+  }
+
+  function irPara(i) {
+    if (!roteiro || !roteiro.ids.length) return informar();
+    const n = Math.max(0, Math.min(roteiro.ids.length - 1, i));
+    roteiro.atual = n;
+    informar();
+    return mostrar(MODULO[roteiro.ids[n]]);
+  }
+
+  function iniciarRoteiro(texto) {
+    const ids = roteiroValido(String(texto || '').split(','));
+    if (!ids.length) return informar();
+    roteiro = { ids, atual: 0 };
+    pausado = false;
+    marcarModo();
+    return irPara(0);
+  }
+
+  function sairDoRoteiro() {
+    roteiro = null;
+    destacar(null);
+    marcarModo();
+    informar();
+  }
+
+  function executar(tipo, arg) {
     if (tipo === 'pausar') {
       pausado = true;
       parar();
+      marcarModo();
       return informar();
     }
     if (tipo === 'retomar') {
       pausado = false;
+      marcarModo();
       return informar();
     }
+    if (tipo === 'roteiro-sair') return sairDoRoteiro();
+    if (tipo === 'roteiro') return iniciarRoteiro(arg); // começar uma apresentação também tira da pausa
     if (pausado) return undefined;
+    if (tipo.startsWith('modulo-')) {
+      if (!roteiro) return informar();
+      const i = roteiro.atual;
+      const ultimo = roteiro.ids.length - 1;
+      const destino = { 'modulo-proximo': i + 1, 'modulo-anterior': i - 1, 'modulo-inicio': 0, 'modulo-fim': ultimo, 'modulo-ir': parseInt(arg, 10) }[tipo];
+      return Number.isInteger(destino) ? irPara(destino) : undefined;
+    }
     const lista = paradas();
     const i = indiceAtual(lista);
     const passo = window.innerHeight * 0.7;
@@ -201,8 +326,14 @@ export function criarNavegador({ aoMudar } = {}) {
     get pausado() {
       return pausado;
     },
+    get roteiro() {
+      return roteiro;
+    },
     destruir() {
       parar();
+      roteiro = null;
+      destacar(null);
+      marcarModo();
       clearTimeout(temporizador);
       window.removeEventListener('wheel', ceder);
       window.removeEventListener('touchstart', ceder);

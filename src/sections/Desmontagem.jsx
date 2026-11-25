@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBancada } from '../bancada/useBancada.js';
 import { INFO, ORDEM } from '../bancada/placas/info.js';
+import { telasDaPlaca } from '../data/modulos.js';
 import { animate, createTimeline, onScroll, reduzMovimento, svg, useEntrada, utils } from '../lib/movimento.js';
 import { asset } from '../lib/asset.js';
 import './Desmontagem.css';
@@ -41,7 +42,24 @@ export default function Desmontagem() {
   const { api, estado } = useBancada(cenaRef, placa);
   const focoRef = useRef({ id: null, n: 0 });
   const info = INFO[placa];
+  const telas = telasDaPlaca(placa);
   useEntrada(secaoRef);
+
+  // Outra parte do site pede uma placa: link "Dados de" no painel ou o roteiro do controle remoto.
+  useEffect(() => {
+    const pedir = id => INFO[id] && setPlaca(id);
+    const aoEvento = e => pedir(e.detail);
+    const aoClicar = e => {
+      const a = e.target.closest?.('[data-placa]');
+      if (a) pedir(a.dataset.placa);
+    };
+    window.addEventListener('canide:placa', aoEvento);
+    document.addEventListener('click', aoClicar);
+    return () => {
+      window.removeEventListener('canide:placa', aoEvento);
+      document.removeEventListener('click', aoClicar);
+    };
+  }, []);
 
   const itens = [
     ...Object.entries(info.rotulos).map(([id, r]) => ({ id, ...r })),
@@ -179,7 +197,7 @@ export default function Desmontagem() {
   }, [foco, focar]);
 
   return (
-    <section id="desmontagem" ref={secaoRef} className="desmontagem" aria-labelledby="desmontagem-titulo">
+    <section id="desmontagem" ref={secaoRef} className="desmontagem" aria-labelledby="desmontagem-titulo" data-placa={placa}>
       <div className="moldura desmontagem__cabeca" data-grupo>
         <p className="rotulo" data-entra>
           <span className="rotulo__num">03</span> O produto · por dentro
@@ -188,7 +206,7 @@ export default function Desmontagem() {
           Peça por peça.
         </h2>
         <p className="enunciado" data-entra>
-          Quatro placas eletrônicas modeladas em 3D a partir dos desenhos técnicos do projeto. Role para separar as
+          Seis placas eletrônicas modeladas em 3D a partir dos desenhos técnicos do projeto. Role para separar as
           peças, explorar cada uma e montar de novo.
         </p>
         <div className="seletor" role="group" aria-label="Placa exibida" data-entra>
@@ -198,6 +216,27 @@ export default function Desmontagem() {
               <span className="seletor__medida">{INFO[id].medidas}</span>
             </button>
           ))}
+        </div>
+        {/* espaço reservado: a linha só existe nas placas com função confirmada e não pode empurrar o palco */}
+        <div className="papel-area">
+          {info.funcao && (
+            <p className="papel" aria-live="polite">
+              <span className="papel__rotulo">No CANIDÉ</span>
+              <span className="papel__texto">{info.funcao}</span>
+              {telas.length > 0 && (
+                <span className="papel__telas">
+                  Aparece no painel em{' '}
+                  {telas.map((t, i) => (
+                    <span key={t.id}>
+                      {i > 0 && ', '}
+                      <a href={`#modulo-${t.id}`}>{t.titulo}</a>
+                    </span>
+                  ))}
+                  .
+                </span>
+              )}
+            </p>
+          )}
         </div>
       </div>
 

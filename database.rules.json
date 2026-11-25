@@ -30,8 +30,9 @@
 
         "comando": {
           ".write": "auth != null && data.parent().child('controle').val() === auth.uid && data.parent().child('expira').val() > now",
-          ".validate": "newData.hasChildren(['tipo', 'seq', 't']) && newData.child('tipo').isString() && newData.child('tipo').val().matches(/^(subir|descer|subir-segurar|descer-segurar|parar|proxima|anterior|inicio|fim|pausar|retomar)$/) && newData.child('seq').isNumber() && newData.child('seq').val() > (data.child('seq').exists() ? data.child('seq').val() : 0) && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000",
-          "$outro": { ".validate": "$outro === 'tipo' || $outro === 'seq' || $outro === 't'" }
+          ".validate": "newData.hasChildren(['tipo', 'seq', 't']) && newData.child('tipo').isString() && newData.child('tipo').val().matches(/^(subir|descer|subir-segurar|descer-segurar|parar|proxima|anterior|inicio|fim|pausar|retomar|roteiro|roteiro-sair|modulo-proximo|modulo-anterior|modulo-inicio|modulo-fim|modulo-ir)$/) && newData.child('seq').isNumber() && newData.child('seq').val() > (data.child('seq').exists() ? data.child('seq').val() : 0) && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000",
+          "arg": { ".validate": "newData.isString() && newData.val().length <= 600 && newData.val().matches(/^[a-z0-9,-]*$/)" },
+          "$outro": { ".validate": "$outro === 'tipo' || $outro === 'seq' || $outro === 't' || $outro === 'arg'" }
         },
 
         "estado": {

@@ -4,7 +4,7 @@ import { conectar, limparCodigo } from './conexao.js';
 export class ErroPareamento extends Error {}
 
 /**
- * Pareia com a apresentação e devolve { enviar, desconectar }.
+ * Pareia com a apresentação e devolve { sid, enviar, desconectar }.
  * aoEstado recebe { fase: 'conectado' | 'reconectando' | 'computador-ausente' | 'encerrado', online, estado }.
  */
 export async function parear({ sid, codigo, aoEstado }) {
@@ -94,11 +94,18 @@ export async function parear({ sid, codigo, aoEstado }) {
   }
 
   return {
-    /** Envia um comando. Sem conexão, não enfileira: o comando seria executado fora de hora. */
-    enviar(tipo) {
+    /** Identificador da sessão (para guardar a seleção de módulos só enquanto ela durar). */
+    sid,
+    /**
+     * Envia um comando. Sem conexão, não enfileira: o comando seria executado fora de hora.
+     * arg (opcional): ids do roteiro separados por vírgula ou o índice do módulo.
+     */
+    enviar(tipo, arg) {
       if (encerrada || !estado.online) return false;
       ultimoSeq = Math.max(ultimoSeq + 1, agoraServidor());
-      set(ref(db, `${base}/comando`), { tipo, seq: ultimoSeq, t: agoraServidor() }).catch(() => {});
+      const comando = { tipo, seq: ultimoSeq, t: agoraServidor() };
+      if (arg != null) comando.arg = String(arg);
+      set(ref(db, `${base}/comando`), comando).catch(() => {});
       return true;
     },
     async desconectar() {

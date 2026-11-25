@@ -252,6 +252,18 @@ export function poly3(pts, fill) {
   return '';
 }
 
+/** Geometria de um cabo redondo pela curva de Bézier cúbica a → c1 → c2 → b (pontos [x, y, z] em mm). */
+export function geometriaCabo([a, c1, c2, b], r) {
+  const v = p => new THREE.Vector3(...p);
+  return new THREE.TubeGeometry(new THREE.CubicBezierCurve3(v(a), v(c1), v(c2), v(b)), 48, r, 10, false);
+}
+
+/** Cabo redondo (substitui os <path> de cabo desenhados a cada quadro nos originais). */
+export function cabo(pontos, r, color) {
+  alvo.add(geometriaCabo(pontos, r), color);
+  return '';
+}
+
 /** Trilha ou fio plano de largura w (mm) sobre o plano z. */
 export function trilho(pts, z, w, fill) {
   for (let i = 0; i < pts.length - 1; i++) {
