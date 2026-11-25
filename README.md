@@ -78,7 +78,7 @@ A rolagem remota anda quadro a quadro (nunca salta), então as animações ligad
 ### Módulos da apresentação
 
 No celular, a área **Módulos da apresentação** lista tudo o que `src/data/modulos.js` define: capítulos da página,
-as cinco telas do painel e as seis placas (lidas de `src/bancada/placas/info.js`). Escolha os módulos, ajuste a ordem
+as cinco telas do painel e as cinco placas (lidas de `src/bancada/placas/info.js`). Escolha os módulos, ajuste a ordem
 com subir e descer e toque em **Iniciar apresentação**. O computador passa a andar só pelos módulos escolhidos, na
 ordem escolhida; nas placas, a página monta a placa atual, troca e desmonta a nova pela mesma rolagem do palco.
 A navegação pública não muda: os módulos fora da seleção continuam no site.

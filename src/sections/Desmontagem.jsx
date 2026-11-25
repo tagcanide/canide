@@ -206,7 +206,7 @@ export default function Desmontagem() {
           Peça por peça.
         </h2>
         <p className="enunciado" data-entra>
-          Seis placas eletrônicas modeladas em 3D a partir dos desenhos técnicos do projeto. Role para separar as
+          Cinco placas eletrônicas modeladas em 3D a partir dos desenhos técnicos do projeto. Role para separar as
           peças, explorar cada uma e montar de novo.
         </p>
         <div className="seletor" role="group" aria-label="Placa exibida" data-entra>

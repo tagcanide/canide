@@ -122,13 +122,13 @@ export const INFO = {
   }
 };
 
-export const ORDEM = ['esp32-c3', 'gy-neo6mv2', 'bme-280', 'bz-251', 'nodemcu-v3', 'modulos-rf'];
+// O BZ-251 não faz parte do projeto: fica fora da página. Os dados e o porte 3D continuam para a bancada de teste.
+export const ORDEM = ['esp32-c3', 'gy-neo6mv2', 'bme-280', 'nodemcu-v3', 'modulos-rf'];
 
 export const CARREGAR = {
   'esp32-c3': () => import('./esp32c3.js'),
   'gy-neo6mv2': () => import('./neo6m.js'),
   'bme-280': () => import('./bme280.js'),
-  'bz-251': () => import('./bz251.js'),
   'nodemcu-v3': () => import('./nodemcu.js'),
   'modulos-rf': () => import('./rf.js')
 };
